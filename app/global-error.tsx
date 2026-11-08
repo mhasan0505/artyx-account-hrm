@@ -1,0 +1,60 @@
+'use client'
+
+import { useEffect } from 'react'
+
+export default function GlobalError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string }
+  reset: () => void
+}) {
+  useEffect(() => {
+    console.error('[GlobalError] Root layout boundary caught error:', error)
+  }, [error])
+
+  return (
+    <html lang="en">
+      <body className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 font-sans text-foreground">
+        <div className="w-full max-w-md surface-card p-6 text-center space-y-4 shadow-xl">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+            <svg
+              className="h-6 w-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold tracking-tight text-foreground">System Exception Intercepted</h2>
+          <p className="text-sm text-muted-foreground">
+            {error.message || 'An unexpected application error occurred. Active terminal state has been preserved.'}
+          </p>
+          {error.digest && (
+            <p className="text-xs text-muted-foreground/80 font-mono">Digest ID: {error.digest}</p>
+          )}
+          <div className="flex justify-center gap-3 pt-2">
+            <button
+              onClick={() => reset()}
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              Try Again
+            </button>
+            <button
+              onClick={() => window.location.assign('/sales')}
+              className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              Return to POS
+            </button>
+          </div>
+        </div>
+      </body>
+    </html>
+  )
+}

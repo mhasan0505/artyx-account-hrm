@@ -1,0 +1,86 @@
+{
+  "liveServer.settings.port": 5500,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": true,
+  "editor.formatOnSaveMode": "modificationsIfAvailable",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "always",
+    "source.organizeImports": "always"
+  },
+
+  "editor.inlineSuggest.enabled": true,
+  "editor.quickSuggestions": {
+    "other": true,
+    "comments": false,
+    "strings": true
+  },
+  "editor.suggestOnTriggerCharacters": true,
+  "editor.tabCompletion": "on",
+  "editor.acceptSuggestionOnEnter": "on",
+
+  "eslint.experimental.useFlatConfig": true,
+  "eslint.workingDirectories": [
+    {
+      "mode": "auto"
+    }
+  ],
+  "eslint.run": "onType",
+  "eslint.codeActionsOnSave.mode": "all",
+  "eslint.alwaysShowStatus": true,
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
+
+  "typescript.tsserver.maxTsServerMemory": 4096,
+  "typescript.suggest.autoImports": true,
+  "javascript.suggest.autoImports": true,
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "javascript.updateImportsOnFileMove.enabled": "always",
+
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1000,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.next": true,
+    "**/dist": true,
+    "**/build": true
+  },
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/**": true,
+    "**/.next/**": true,
+    "**/dist/**": true,
+    "**/build/**": true
+  },
+
+  "tailwindCSS.includeLanguages": {
+    "plaintext": "html"
+  },
+  "tailwindCSS.emmetCompletions": true,
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore",
+  "less.lint.unknownAtRules": "ignore",
+
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "cSpell.words": ["BKASH", "Challan", "NAGAD"]
+}

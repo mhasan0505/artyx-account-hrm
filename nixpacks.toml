@@ -1,0 +1,23 @@
+# Nixpacks configuration for Railway / Coolify / Docker deployments
+
+[variables]
+NODE_OPTIONS = "--max-old-space-size=2048"
+NEXT_TELEMETRY_DISABLED = "1"
+PRISMA_CLI_QUERY_ENGINE_TYPE = "binary"
+PRISMA_CLIENT_ENGINE_TYPE = "binary"
+HOSTNAME = "0.0.0.0"
+PORT = "3000"
+
+[phases.setup]
+# Do not add "pnpm" here — Nixpacks auto-installs it from pnpm-lock.yaml.
+# Listing pnpm twice causes a Nix store collision (pnpm 9 vs 10) and fails the build.
+nixPkgs = ["...", "nodejs_22"]
+
+[phases.build]
+cmds = [
+  "prisma generate",
+  "pnpm build"
+]
+
+[start]
+cmd = "node .next/standalone/server.js"

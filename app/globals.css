@@ -1,0 +1,1164 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success-foreground: var(--success-foreground);
+  --color-success: var(--success);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning: var(--warning);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  /*
+   * Type scale — two zones:
+   *  - xs/sm/base: tight "Minor Second" (1.067) ratio, kept exactly as
+   *    before. This is deliberate for dense data tables — body text,
+   *    table cells, and small labels should sit close together so a
+   *    row of figures reads as one visual band, not a jumble of sizes.
+   *  - lg and up: stepped up to a ~1.2-1.25 ratio so headings actually
+   *    read as headings. The old scale kept the same 1.067 ratio all
+   *    the way to 5xl, which meant a "page title" at 4xl was only
+   *    ~19px — barely bigger than 14px body text, so it never read as
+   *    an anchor. Page titles now land at 32px, section headers at
+   *    22-26px.
+   */
+  --text-xs: 0.771rem;   /* 12.34px — table meta, timestamps */
+  --text-sm: 0.822rem;   /* 13.15px — dense table body */
+  --text-base: 0.875rem; /* 14.00px — default body text */
+  --text-lg: 1rem;       /* 16.00px — emphasized body / card labels */
+  --text-xl: 1.125rem;   /* 18.00px — subsection headers */
+  --text-2xl: 1.375rem;  /* 22.00px — section headers, card titles */
+  --text-3xl: 1.625rem;  /* 26.00px — major card/panel headers */
+  --text-4xl: 2rem;      /* 32.00px — page titles */
+  --text-5xl: 2.5rem;    /* 40.00px — hero/dashboard headline, rare use */
+}
+
+:root {
+  /* Artyx Light Ground: ivory-slate ground (#F6F8F3) */
+  --background: #F6F8F3;
+  --foreground: #0D140A;
+
+  /* Crisp white elevated surfaces */
+  --card: #FFFFFF;
+  --card-foreground: #0D140A;
+  --popover: #FFFFFF;
+  --popover-foreground: #0D140A;
+
+  /* WCAG AA 5.8:1 compliant forest-lime for interactive elements on light */
+  --primary: #3E7000;
+  --primary-foreground: #FFFFFF;
+
+  /* Clean neutral secondary surfaces */
+  --secondary: #EDEFEA;
+  --secondary-foreground: #0D140A;
+
+  /* High-contrast accessible muted text (>9:1 contrast on white) */
+  --muted: #F1F5F0;
+  --muted-foreground: #374151;
+
+  /* ── Document Print Palette Tokens ── */
+  --print-text-primary: #242424;     /* Regular body text and item descriptions */
+  --print-text-secondary: #3F4652;   /* Labels, metadata, terms, and auxiliary notes */
+  --print-text-black: #000000;       /* Fine micro-text, serials, barcodes */
+  --print-brand: #2b6fd6;            /* Current brand blue for headings, totals, borders */
+  --print-brand-dark: #1e3a8a;       /* Deep navy for major titles & table headers */
+  --print-brand-light: #93c5fd;      /* Soft blue for customer strip and sub-borders */
+  --print-border-brand: #2b6fd6;     /* Primary document border */
+  --print-border-light: #93c5fd;     /* Secondary highlight border */
+  --print-border-subtle: #e2e8f0;    /* Muted neutral separator */
+  --print-bg-subtle: #f8fafc;        /* Subtle neutral surface tint */
+
+  /* ── Document Print Typography Tokens (Baseline: A4 Invoice standard) ── */
+  --print-font-sans: 'Segoe UI', Tahoma, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+  --print-font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --print-text-company: 21px;        /* Prominent company header name */
+  --print-text-title: 13px;          /* Document uppercase title (INVOICE, CHALLAN, VOUCHER) */
+  --print-text-detail-lg: 11.5px;    /* Strong identifiers (Invoice #, Challan #, Voucher #, Party Name) */
+  --print-text-detail: 11px;         /* Standard metadata, dates, contact details, balance amounts */
+  --print-text-body: 10.5px;         /* Base document body, item descriptions, table rows, terms */
+  --print-text-section: 10.5px;      /* Section titles (Terms & Conditions, Running Balance) */
+  --print-text-th: 10px;             /* Compact, scannable table column headers */
+  --print-text-meta: 10px;           /* Secondary metadata, table row numbers, customer strip text */
+  --print-text-label: 9.5px;         /* Compact field labels, subtotal labels, amount in words */
+  --print-text-meta-sm: 9px;         /* Serial numbers, line notes, reference codes */
+  --print-text-micro: 8.5px;         /* Micro labels ("Customer:", "Specs:", "SN:") */
+  --print-text-badge: 7.5px;         /* Tiny status badges (GIFT, Net B2B) */
+  --print-text-total: 12px;          /* Table grand total amount */
+  --print-text-total-lg: 14px;       /* Large settlement amount (Voucher total box) */
+
+  --print-leading-tight: 1.15;
+  --print-leading-snug: 1.3;
+  --print-leading-normal: 1.35;
+  --print-leading-relaxed: 1.45;
+
+  /* Light Theme Accent Hover */
+  --accent: #F1F5F0;
+  --accent-foreground: #0D140A;
+
+  /* Semantic Status Colors */
+  --destructive: #dc2626;           /* Void / Overdue / Delete */
+  --destructive-foreground: #ffffff;
+  --success: #2e7d32;              /* Paid / Completed */
+  --success-foreground: #ffffff;
+  --warning: #d97706;              /* Pending / Review */
+  --warning-foreground: #ffffff;
+
+  /* High-definition borders & inputs */
+  --border: #E2E8F0;
+  --input: #CBD5E1;
+  --ring: #3E7000;
+
+  /* Universal Analytics Chart Palette */
+  --chart-1: #3E7000;
+  --chart-2: #16a34a;
+  --chart-3: #ca8a04;
+  --chart-4: #0284c7;
+  --chart-5: #e11d48;
+
+  --radius: 0.75rem;
+
+  /* SIDEBAR: Deep Obsidian Carbon (#070B06) with neon lime active indicator */
+  --sidebar: #070B06;
+  --sidebar-foreground: #F4F6F0;
+  --sidebar-primary: #7FFF00;
+  --sidebar-primary-foreground: #070B06;
+  --sidebar-accent: rgba(127, 255, 0, 0.12);
+  --sidebar-accent-foreground: #7FFF00;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #7FFF00;
+}
+
+.dark {
+  /* Artyx Dark Ground: Deep obsidian architectural ground (#070B06) */
+  --background: #070B06;
+  --foreground: #F4F6F0;
+
+  /* Brand charcoal & deep slate surfaces */
+  --card: #111710;
+  --card-foreground: #F4F6F0;
+  --popover: #151E13;
+  --popover-foreground: #F4F6F0;
+
+  /* High-Voltage Neon Lime (#7FFF00) */
+  --primary: #7FFF00;
+  --primary-foreground: #070B06;
+
+  /* Dark secondary surfaces */
+  --secondary: #182216;
+  --secondary-foreground: #F4F6F0;
+
+  /* Muted background & text */
+  --muted: #131A12;
+  --muted-foreground: #A3ABA0;
+
+  /* Document Print Palette Tokens (strictly paper-optimized even in dark mode) */
+  --print-text-primary: #242424;
+  --print-text-secondary: #3F4652;
+  --print-text-black: #000000;
+  --print-brand: #3E7000;
+  --print-brand-dark: #254400;
+  --print-brand-light: #7FFF00;
+  --print-border-brand: #3E7000;
+  --print-border-light: #7FFF00;
+  --print-border-subtle: #e2e8f0;
+  --print-bg-subtle: #f8fafc;
+
+  /* Lime subtle hover state */
+  --accent: rgba(127, 255, 0, 0.12);
+  --accent-foreground: #7FFF00;
+
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --success: #7FFF00;
+  --success-foreground: #070B06;
+  --warning: #f59e0b;
+  --warning-foreground: #070B06;
+
+  --border: rgba(127, 255, 0, 0.18);
+  --input: rgba(127, 255, 0, 0.22);
+  --ring: #7FFF00;
+
+  --chart-1: #7FFF00;
+  --chart-2: #4ade80;
+  --chart-3: #fbbf24;
+  --chart-4: #38bdf8;
+  --chart-5: #f43f5e;
+
+  /* SIDEBAR: Deep Obsidian Ground */
+  --sidebar: #050804;
+  --sidebar-foreground: #F4F6F0;
+  --sidebar-primary: #7FFF00;
+  --sidebar-primary-foreground: #070B06;
+  --sidebar-accent: rgba(127, 255, 0, 0.14);
+  --sidebar-accent-foreground: #7FFF00;
+  --sidebar-border: rgba(127, 255, 0, 0.14);
+  --sidebar-ring: #7FFF00;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground text-base;
+    overflow-x: hidden;
+    max-width: 100vw;
+    width: 100%;
+  }
+  html {
+    @apply font-sans text-base;
+    overflow-x: hidden;
+    max-width: 100vw;
+    width: 100%;
+  }
+
+  /* Sidebar nav icons — consistent, slightly softer stroke for a refined rail */
+  [data-sidebar] [data-sidebar="menu-button"] svg,
+  [data-sidebar] [data-sidebar="menu-sub-button"] svg,
+  [data-sidebar] [data-sidebar="menu"] svg {
+    stroke-width: 1.75;
+  }
+}
+
+body {
+  @apply bg-background text-foreground antialiased text-base;
+  /* Use the variable defined in your layout.tsx */
+  font-family: var(--font-geist-sans);
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
+}
+
+@layer components {
+  .page-shell {
+    @apply min-h-screen bg-background text-foreground p-6;
+  }
+
+  .page-header {
+    @apply mb-12;
+  }
+
+  .page-title {
+    @apply mb-2 text-4xl font-bold tracking-tight;
+  }
+
+  .page-subtitle {
+    @apply text-muted-foreground;
+  }
+
+  .surface-card {
+    @apply rounded-2xl border border-border bg-card text-card-foreground shadow-sm transition-shadow;
+  }
+
+  /* Soft elevated surface — border-light, shadow-led depth (Vector 2) */
+  .surface-raised {
+    @apply rounded-2xl border border-transparent bg-card text-card-foreground shadow-sm;
+  }
+
+  /* Subtle separated band — replaces rigid row borders with background contrast */
+  .surface-inset {
+    @apply rounded-xl bg-muted/40;
+  }
+
+  /* Glassmorphism overlay for modals, drawers, and popovers (Vector 2) */
+  .glass-overlay {
+    @apply fixed inset-0 z-50 bg-black/40 backdrop-blur-sm;
+  }
+
+  /* Premium financial total — massive, bold, aligned digits (Vector 3) */
+  .financial-total {
+    @apply text-3xl font-black tracking-tight tabular-nums;
+  }
+
+  .financial-total-lg {
+    @apply text-4xl font-black tracking-tight tabular-nums;
+  }
+
+  /* Tactile press feedback for major action buttons (Vector 4) */
+  .pressable {
+    @apply transition-all duration-200 hover:brightness-[1.03] active:scale-[0.98];
+  }
+
+  .pressable-subtle {
+    @apply transition-all duration-200 active:scale-[0.98];
+  }
+
+  /* 1. ERP-Specific Inputs: Tight padding, smaller font */
+  .pos-input {
+    @apply flex h-9 w-full rounded-md border border-input bg-card px-3 py-1
+           text-sm shadow-sm transition-colors file:border-0 file:bg-transparent
+           file:text-sm file:font-medium placeholder:text-muted-foreground
+           focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring;
+  }
+
+  /* 2. Data Table Typography */
+  .table-data {
+    @apply text-sm leading-tight py-2 px-4 border-b border-border align-middle;
+  }
+
+  /* 3. Specs/Mono Text: For Serial Numbers & Laptop Specs */
+  .technical-data {
+    font-family: var(--font-geist-mono);
+    @apply text-xs tracking-tight text-muted-foreground uppercase;
+  }
+
+  /* 4. Financial Values */
+  .currency-value {
+    @apply tabular-nums font-medium text-right;
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     5. POS SEMANTIC STATUS BADGES (Soft-Tint + Crisp Border)
+     Usage: <span className="pos-badge pos-badge-paid">Paid</span>
+     ───────────────────────────────────────────────────────────────────────── */
+  .pos-badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5
+           text-xs font-medium leading-none tracking-tight whitespace-nowrap
+           border transition-colors select-none;
+  }
+
+  /* Optional 6px status indicator dot inside a badge: <span className="pos-badge-dot" /> */
+  .pos-badge-dot {
+    @apply h-1.5 w-1.5 shrink-0 rounded-full bg-current;
+  }
+
+  /* PAID / COMPLETED / IN STOCK / ACTIVE (Emerald) */
+  .pos-badge-paid,
+  .pos-badge-success {
+    @apply bg-emerald-500/10 text-emerald-700 border-emerald-500/25
+           dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30;
+  }
+
+  /* PARTIAL / LOW STOCK / PENDING (Amber) */
+  .pos-badge-partial,
+  .pos-badge-low-stock,
+  .pos-badge-warning {
+    @apply bg-amber-500/12 text-amber-800 border-amber-500/30
+           dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/30;
+  }
+
+  /* DUE / UNPAID / OVERDUE / OUT OF STOCK / VOID (Rose/Red) */
+  .pos-badge-due,
+  .pos-badge-unpaid,
+  .pos-badge-danger {
+    @apply bg-rose-500/10 text-rose-700 border-rose-500/25
+           dark:bg-rose-500/15 dark:text-rose-300 dark:border-rose-500/30;
+  }
+
+  /* ON HOLD / DRAFT / TRANSIT (Indigo/Brand Accent) */
+  .pos-badge-hold,
+  .pos-badge-info {
+    @apply bg-indigo-500/10 text-indigo-700 border-indigo-500/25
+           dark:bg-indigo-500/15 dark:text-indigo-300 dark:border-indigo-500/30;
+  }
+
+  /* REFUNDED / RETURNED / CANCELLED / ARCHIVED (Neutral Zinc) */
+  .pos-badge-refunded,
+  .pos-badge-neutral {
+    @apply bg-muted text-muted-foreground border-border;
+  }
+
+  /* 6. High-Converting POS Terminal "Charge / Complete Sale" Button */
+  .btn-pos-checkout {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl
+           bg-success text-success-foreground font-semibold shadow-sm
+           transition-all duration-200 hover:brightness-[1.05] active:scale-[0.98]
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success/50
+           disabled:pointer-events-none disabled:opacity-50;
+  }
+}
+
+@layer utilities {
+  /*
+   * Use this for product descriptions/specs to keep the UI clean.
+   * Fixed: the previous version used the invalid property
+   * `-line-clamp`, which browsers silently ignore — so text was
+   * never actually being clamped. The correct, vendor-prefixed
+   * property is `-webkit-line-clamp`.
+   *
+   * Note: Tailwind v4 ships a built-in `line-clamp-1` utility that
+   * does the same thing — this custom class is only needed if you
+   * want to override/extend that default behavior somewhere.
+   */
+  .line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Optimized Scrollbar for Data-Dense Views */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 dark:bg-slate-700 rounded-full;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-400 dark:bg-slate-600;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   UNIFIED DOCUMENT PRINT TYPOGRAPHY CLASSES (Invoices, Challans & Vouchers)
+   Scoped strictly to document print roots to guarantee zero bleed into POS UI.
+   Works seamlessly across screen preview, HTML-to-PDF, and browser print.
+   ───────────────────────────────────────────────────────────────────────────── */
+.print-doc-root,
+.sales-invoice-root,
+.challan-root,
+.a4-invoice-container,
+.invoice-shell,
+#voucher-print-area,
+.voucher-document {
+  font-family: var(--print-font-sans);
+  font-size: var(--print-text-body);
+  line-height: var(--print-leading-normal);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+.print-doc-root .invoice-bottom-block,
+.sales-invoice-root .invoice-bottom-block,
+.challan-root .challan-bottom-block {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.print-doc-root .print-company-name,
+.sales-invoice-root .print-company-name,
+.challan-root .print-company-name,
+.voucher-document .print-company-name,
+#voucher-print-area .print-company-name {
+  font-size: var(--print-text-company);
+  font-weight: 700;
+  line-height: var(--print-leading-tight);
+  letter-spacing: -0.015em;
+}
+
+.print-doc-root .print-doc-title,
+.sales-invoice-root .print-doc-title,
+.challan-root .print-doc-title,
+.voucher-document .print-doc-title,
+#voucher-print-area .print-doc-title {
+  font-size: var(--print-text-title);
+  font-weight: 700;
+  line-height: var(--print-leading-tight);
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+}
+
+.print-doc-root .print-detail-lg,
+.sales-invoice-root .print-detail-lg,
+.challan-root .print-detail-lg,
+.voucher-document .print-detail-lg,
+#voucher-print-area .print-detail-lg {
+  font-size: var(--print-text-detail-lg);
+  line-height: var(--print-leading-snug);
+}
+
+.print-doc-root .print-detail,
+.sales-invoice-root .print-detail,
+.challan-root .print-detail,
+.voucher-document .print-detail,
+#voucher-print-area .print-detail {
+  font-size: var(--print-text-detail);
+  line-height: var(--print-leading-normal);
+}
+
+.print-doc-root .print-body,
+.sales-invoice-root .print-body,
+.challan-root .print-body,
+.voucher-document .print-body,
+#voucher-print-area .print-body {
+  font-size: var(--print-text-body);
+  line-height: var(--print-leading-normal);
+}
+
+.print-doc-root .print-section-heading,
+.sales-invoice-root .print-section-heading,
+.challan-root .print-section-heading,
+.voucher-document .print-section-heading,
+#voucher-print-area .print-section-heading {
+  font-size: var(--print-text-section);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: var(--print-leading-snug);
+}
+
+.print-doc-root .print-th,
+.sales-invoice-root .print-th,
+.challan-root .print-th,
+.voucher-document .print-th,
+#voucher-print-area .print-th {
+  font-size: var(--print-text-th);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: var(--print-leading-snug);
+}
+
+.print-doc-root .print-meta,
+.sales-invoice-root .print-meta,
+.challan-root .print-meta,
+.voucher-document .print-meta,
+#voucher-print-area .print-meta {
+  font-size: var(--print-text-meta);
+  line-height: var(--print-leading-normal);
+}
+
+.print-doc-root .print-label,
+.sales-invoice-root .print-label,
+.challan-root .print-label,
+.voucher-document .print-label,
+#voucher-print-area .print-label {
+  font-size: var(--print-text-label);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: var(--print-leading-snug);
+}
+
+.print-doc-root .print-meta-sm,
+.sales-invoice-root .print-meta-sm,
+.challan-root .print-meta-sm,
+.voucher-document .print-meta-sm,
+#voucher-print-area .print-meta-sm {
+  font-size: var(--print-text-meta-sm);
+  line-height: var(--print-leading-snug);
+}
+
+.print-doc-root .print-micro,
+.sales-invoice-root .print-micro,
+.challan-root .print-micro,
+.voucher-document .print-micro,
+#voucher-print-area .print-micro {
+  font-size: var(--print-text-micro);
+  line-height: var(--print-leading-snug);
+}
+
+.print-doc-root .print-badge,
+.sales-invoice-root .print-badge,
+.challan-root .print-badge,
+.voucher-document .print-badge,
+#voucher-print-area .print-badge {
+  font-size: var(--print-text-badge);
+  font-weight: 700;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.print-doc-root .print-amount-grand,
+.sales-invoice-root .print-amount-grand,
+.challan-root .print-amount-grand,
+.voucher-document .print-amount-grand,
+#voucher-print-area .print-amount-grand {
+  font-size: var(--print-text-total);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.print-doc-root .print-amount-xl,
+.sales-invoice-root .print-amount-xl,
+.challan-root .print-amount-xl,
+.voucher-document .print-amount-xl,
+#voucher-print-area .print-amount-xl {
+  font-size: var(--print-text-total-lg);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   PRINT STYLES FOR FINANCIAL REPORTS & SYSTEM DOCUMENTS
+   ───────────────────────────────────────────────────────────────────────────── */
+@media print {
+  html,
+  body {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #111827 !important;
+    font-size: 10pt !important;
+    line-height: 1.35 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Universal scrollbar killer */
+  * {
+    overflow: visible !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+
+  ::-webkit-scrollbar,
+  *::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+
+  /* Hide navigation, sidebar, quick nav, headers, buttons, inputs, dialogs */
+  aside,
+  nav,
+  header,
+  .print\:hidden,
+  .no-print,
+  button,
+  [role="dialog"]:not(:has(#voucher-print-area)),
+  .sidebar,
+  [data-sidebar],
+  .quick-nav,
+  input,
+  select,
+  .pagination,
+  nav[aria-label="pagination"] {
+    display: none !important;
+  }
+
+  /* Unconstrain containers and remove screen padding/margins (reports only) */
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) .container,
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) main,
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) .page-shell,
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) div[class*="container"]:not(#a4-invoice-container):not(.a4-invoice-container) {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Flatten screen cards into crisp, clean print surfaces (reports only) */
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) .rounded-xl,
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) .rounded-lg,
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) .rounded-2xl,
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) .border,
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) .bg-card,
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) .surface-card,
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) [class*="bg-"] {
+    background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* Print Borders (reports only) */
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) .border,
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) .border-b,
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) .border-t,
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) .border-l,
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) .border-r,
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) .divide-y > * {
+    border-color: #d1d5db !important;
+  }
+
+  /* High-Contrast Print Typography (Financial Reports only) */
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) h1,
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) h2,
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) h3,
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) h4,
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) h5,
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) h6,
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) p,
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) span,
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) td,
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) th,
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) div,
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)):not(:has(.challan-root)):not(:has(#voucher-print-area)):not(:has(.print-doc-root)) label {
+    color: #111827 !important;
+    text-shadow: none !important;
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────────────
+     UNIFIED DOCUMENT PRINT SYSTEM (Invoices, Challans & Vouchers)
+     Palette tokens:
+       --print-text-primary:   #242424 (Regular body text & item descriptions)
+       --print-text-secondary: #3F4652 (Labels, metadata, terms & auxiliary notes)
+       --print-text-black:     #000000 (Fine micro-text, serials, barcodes)
+       --print-brand:          #2b6fd6 (Headings, totals, borders, accents)
+       --print-brand-dark:     #1e3a8a (Deep navy for major titles & table headers)
+     ───────────────────────────────────────────────────────────────────────────── */
+  .print-doc-root,
+  .sales-invoice-root,
+  .challan-root,
+  .a4-invoice-container,
+  .invoice-shell,
+  #voucher-print-area,
+  .voucher-document {
+    color: var(--print-text-primary) !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    font-family: var(--print-font-sans) !important;
+    font-size: var(--print-text-body) !important;
+    line-height: var(--print-leading-normal) !important;
+    text-rendering: optimizeLegibility !important;
+    -webkit-font-smoothing: antialiased !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Document Print Typography Scale enforcement */
+  .print-doc-root .print-company-name,
+  .sales-invoice-root .print-company-name,
+  .challan-root .print-company-name,
+  .voucher-document .print-company-name,
+  #voucher-print-area .print-company-name {
+    font-size: var(--print-text-company) !important;
+    font-weight: 700 !important;
+    line-height: var(--print-leading-tight) !important;
+    letter-spacing: -0.015em !important;
+  }
+
+  .print-doc-root .print-doc-title,
+  .sales-invoice-root .print-doc-title,
+  .challan-root .print-doc-title,
+  .voucher-document .print-doc-title,
+  #voucher-print-area .print-doc-title {
+    font-size: var(--print-text-title) !important;
+    font-weight: 700 !important;
+    line-height: var(--print-leading-tight) !important;
+    letter-spacing: 0.25em !important;
+    text-transform: uppercase !important;
+  }
+
+  .print-doc-root .print-detail-lg,
+  .sales-invoice-root .print-detail-lg,
+  .challan-root .print-detail-lg,
+  .voucher-document .print-detail-lg,
+  #voucher-print-area .print-detail-lg {
+    font-size: var(--print-text-detail-lg) !important;
+    line-height: var(--print-leading-snug) !important;
+  }
+
+  .print-doc-root .print-detail,
+  .sales-invoice-root .print-detail,
+  .challan-root .print-detail,
+  .voucher-document .print-detail,
+  #voucher-print-area .print-detail {
+    font-size: var(--print-text-detail) !important;
+    line-height: var(--print-leading-normal) !important;
+  }
+
+  .print-doc-root .print-body,
+  .sales-invoice-root .print-body,
+  .challan-root .print-body,
+  .voucher-document .print-body,
+  #voucher-print-area .print-body {
+    font-size: var(--print-text-body) !important;
+    line-height: var(--print-leading-normal) !important;
+  }
+
+  .print-doc-root .print-section-heading,
+  .sales-invoice-root .print-section-heading,
+  .challan-root .print-section-heading,
+  .voucher-document .print-section-heading,
+  #voucher-print-area .print-section-heading {
+    font-size: var(--print-text-section) !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    line-height: var(--print-leading-snug) !important;
+  }
+
+  .print-doc-root .print-th,
+  .sales-invoice-root .print-th,
+  .challan-root .print-th,
+  .voucher-document .print-th,
+  #voucher-print-area .print-th {
+    font-size: var(--print-text-th) !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    line-height: var(--print-leading-snug) !important;
+  }
+
+  .print-doc-root .print-meta,
+  .sales-invoice-root .print-meta,
+  .challan-root .print-meta,
+  .voucher-document .print-meta,
+  #voucher-print-area .print-meta {
+    font-size: var(--print-text-meta) !important;
+    line-height: var(--print-leading-normal) !important;
+  }
+
+  .print-doc-root .print-label,
+  .sales-invoice-root .print-label,
+  .challan-root .print-label,
+  .voucher-document .print-label,
+  #voucher-print-area .print-label {
+    font-size: var(--print-text-label) !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    line-height: var(--print-leading-snug) !important;
+  }
+
+  .print-doc-root .print-meta-sm,
+  .sales-invoice-root .print-meta-sm,
+  .challan-root .print-meta-sm,
+  .voucher-document .print-meta-sm,
+  #voucher-print-area .print-meta-sm {
+    font-size: var(--print-text-meta-sm) !important;
+    line-height: var(--print-leading-snug) !important;
+  }
+
+  .print-doc-root .print-micro,
+  .sales-invoice-root .print-micro,
+  .challan-root .print-micro,
+  .voucher-document .print-micro,
+  #voucher-print-area .print-micro {
+    font-size: var(--print-text-micro) !important;
+    line-height: var(--print-leading-snug) !important;
+  }
+
+  .print-doc-root .print-badge,
+  .sales-invoice-root .print-badge,
+  .challan-root .print-badge,
+  .voucher-document .print-badge,
+  #voucher-print-area .print-badge {
+    font-size: var(--print-text-badge) !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    line-height: 1 !important;
+  }
+
+  .print-doc-root .print-amount-grand,
+  .sales-invoice-root .print-amount-grand,
+  .challan-root .print-amount-grand,
+  .voucher-document .print-amount-grand,
+  #voucher-print-area .print-amount-grand {
+    font-size: var(--print-text-total) !important;
+    font-weight: 700 !important;
+    font-variant-numeric: tabular-nums !important;
+  }
+
+  .print-doc-root .print-amount-xl,
+  .sales-invoice-root .print-amount-xl,
+  .challan-root .print-amount-xl,
+  .voucher-document .print-amount-xl,
+  #voucher-print-area .print-amount-xl {
+    font-size: var(--print-text-total-lg) !important;
+    font-weight: 700 !important;
+    font-variant-numeric: tabular-nums !important;
+  }
+
+  /* Primary text (#242424) for regular body content & line items */
+  .print-doc-root .print-text-primary,
+  .sales-invoice-root .item-desc,
+  .challan-root .item-desc,
+  .print-text-primary {
+    color: var(--print-text-primary) !important;
+  }
+
+  /* Secondary text (#3F4652) for labels, metadata keys, terms, notes */
+  .print-doc-root .print-text-secondary,
+  .sales-invoice-root .meta-lbl,
+  .challan-root .meta-lbl,
+  .sales-invoice-root .terms-text,
+  .challan-root .terms-text,
+  .print-text-secondary {
+    color: var(--print-text-secondary) !important;
+  }
+
+  /* Pure black (#000000) strictly for high-clarity micro-text (serials, barcodes) */
+  .print-doc-root .print-text-black,
+  .sales-invoice-root .sn-wrap,
+  .challan-root .sn-wrap,
+  .sales-invoice-root .print-micro-black,
+  .challan-root .print-micro-black,
+  #voucher-print-area .print-micro-black,
+  #thermal-receipt .print-micro-black,
+  .print-text-black {
+    color: var(--print-text-black) !important;
+  }
+
+  /* Brand blue headings & totals */
+  .print-doc-root .print-text-brand,
+  .sales-invoice-root .brand-title,
+  .challan-root .brand-title,
+  #voucher-print-area .brand-title,
+  .print-text-brand {
+    color: var(--print-brand) !important;
+  }
+
+  .print-doc-root .print-text-brand-dark,
+  .sales-invoice-root .brand-dark,
+  .challan-root .brand-dark,
+  .sales-invoice-root table.items th,
+  .challan-root table.items th,
+  .sales-invoice-root .grand-total-val,
+  #voucher-print-area .total-amount-val,
+  .print-text-brand-dark {
+    color: var(--print-brand-dark) !important;
+  }
+
+  /* Crisp brand borders */
+  .print-doc-root .print-border-brand,
+  .sales-invoice-root .border-brand,
+  .challan-root .border-brand,
+  .print-border-brand {
+    border-color: var(--print-border-brand) !important;
+  }
+
+  .print-doc-root .print-border-light,
+  .sales-invoice-root .customer-strip,
+  .challan-root .customer-strip,
+  .print-border-light {
+    border-color: var(--print-border-light) !important;
+  }
+
+  .print-doc-root .invoice-bottom-block,
+  .sales-invoice-root .invoice-bottom-block,
+  .challan-root .challan-bottom-block {
+    margin-top: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Ensure dialog containing voucher is fully visible and printable without UI chrome */
+  [role="dialog"]:has(#voucher-print-area) {
+    display: block !important;
+    position: static !important;
+    transform: none !important;
+    width: 100% !important;
+    max-width: 210mm !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+  }
+
+  .text-muted-foreground {
+    color: #4b5563 !important;
+  }
+
+  .font-mono {
+    font-family: var(--font-geist-mono), monospace !important;
+  }
+
+  .text-rose-600,
+  .text-red-600 {
+    color: #991b1b !important;
+  }
+
+  .text-emerald-600,
+  .text-green-600 {
+    color: #065f46 !important;
+  }
+
+  .text-sky-600,
+  .text-sky-700,
+  .text-purple-600,
+  .text-purple-700 {
+    color: #1f2937 !important;
+  }
+
+  /* Tables & Rows (reports only) */
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)) table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin-top: 6px !important;
+    margin-bottom: 12px !important;
+    table-layout: auto !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+
+  .overflow-x-auto {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  tbody tr,
+  tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)) th,
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)) td {
+    padding: 4px 6px !important;
+    font-size: 9pt !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    vertical-align: top !important;
+  }
+
+  body:not(:has(#a4-invoice-container)):not(:has(.sales-invoice-root)):not(:has(.a4-invoice-container)):not(:has(.thermal-receipt)):not(:has(.challan-shell)) th {
+    font-weight: 700 !important;
+    border-bottom: 1.5pt solid #111827 !important;
+    background-color: #f9fafb !important;
+    color: #111827 !important;
+  }
+
+  /* Multi-column layouts in Print */
+  .print-grid-2 {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 16px !important;
+  }
+
+  .print-grid-3 {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  .print-grid-4 {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  /* KPI / Summary cards in Print: compact border boxes */
+  .print-kpi-card {
+    border: 1px solid #e5e7eb !important;
+    padding: 8px 12px !important;
+    break-inside: avoid !important;
+  }
+
+  .print-avoid-break,
+  .break-inside-avoid {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .pos-badge {
+    border: 1px solid #9ca3af !important;
+    padding: 1px 6px !important;
+    border-radius: 9999px !important;
+    font-size: 8pt !important;
+    font-weight: 600 !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ARTYX DIGITAL MOTION & GENJUTSU UI DESIGN SYSTEM
+   Governed by .agents / design-dna & motion-design guidelines
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  --ease-mechanical: cubic-bezier(0.16, 1, 0.3, 1);
+  --lime-primary: #7FFF00;
+  --lime-glow: rgba(127, 255, 0, 0.28);
+  --lime-border: rgba(127, 255, 0, 0.18);
+}
+
+/* 60fps mechanical interaction utilities */
+.artyx-card {
+  border: 1px solid var(--border);
+  background: var(--card);
+  transition: transform 220ms var(--ease-mechanical),
+              border-color 220ms var(--ease-mechanical),
+              box-shadow 220ms var(--ease-mechanical);
+  will-change: transform, box-shadow;
+}
+
+.dark .artyx-card:hover {
+  border-color: rgba(127, 255, 0, 0.35);
+  box-shadow: 0 0 25px rgba(127, 255, 0, 0.08), 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+.artyx-glow-border {
+  position: relative;
+}
+
+.dark .artyx-glow-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(127, 255, 0, 0.4), transparent 60%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.artyx-btn-primary {
+  transition: all 180ms var(--ease-mechanical);
+}
+
+.artyx-btn-primary:active {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .artyx-card,
+  .artyx-btn-primary {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+

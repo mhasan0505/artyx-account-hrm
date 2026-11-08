@@ -1,0 +1,14 @@
+packages: []
+
+allowBuilds:
+  '@prisma/engines': true
+  core-js: false
+  esbuild: false
+  msw: false
+  prisma: true
+  sharp: false
+  unrs-resolver: false
+
+permissions:
+  dotenv:
+    skills: false
