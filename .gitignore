@@ -59,5 +59,7 @@ yarn.lock
 # sales import output
 output/sales-import/
 
-#agent
+# agent skills & local agent working files
+.agent/skillls/
+.agent/skills/
 .agents 
