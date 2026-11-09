@@ -55,7 +55,7 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
-  output: process.env.VERCEL ? undefined : 'standalone',
+  output: process.env.VERCEL || process.env.NETLIFY ? undefined : 'standalone',
   serverExternalPackages: ['@prisma/client', '@prisma/adapter-pg', 'pg'],
   async rewrites() {
     return [
