@@ -2002,6 +2002,7 @@ enum CredentialCategory {
   DATABASE
   SOCIAL_MEDIA
   API_KEY
+  ENV_VARIABLES
   OTHER
 }
 

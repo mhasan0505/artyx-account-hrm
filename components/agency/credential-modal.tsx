@@ -120,6 +120,7 @@ export function AddCredentialModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-card border-border text-card-foreground">
+                  <SelectItem value="ENV_VARIABLES">Environment Variables (.env)</SelectItem>
                   <SelectItem value="DOMAIN">Domain Registrar</SelectItem>
                   <SelectItem value="HOSTING">Hosting / Server / cPanel</SelectItem>
                   <SelectItem value="CMS_ADMIN">CMS Admin (WordPress/Shopify)</SelectItem>

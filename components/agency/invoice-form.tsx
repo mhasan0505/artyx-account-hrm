@@ -195,18 +195,27 @@ export function InvoiceForm({
           <CardContent className="space-y-3.5 text-xs">
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground font-medium">Client <span className="text-rose-500">*</span></Label>
-              <Select value={clientId} onValueChange={setClientId}>
-                <SelectTrigger className="bg-background border-border text-foreground">
-                  <SelectValue placeholder="Select Client" />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border text-card-foreground">
-                  {clients.map(c => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.companyName} ({c.clientCode})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {clients.length === 0 ? (
+                <div className="p-2.5 rounded-xl border border-dashed border-border bg-muted/30 text-xs text-muted-foreground flex flex-col gap-1.5">
+                  <span>No active clients found in directory.</span>
+                  <Link href="/clients" className="text-primary hover:underline font-semibold flex items-center gap-1">
+                    <Plus className="size-3" /> Add your first client
+                  </Link>
+                </div>
+              ) : (
+                <Select value={clientId} onValueChange={setClientId}>
+                  <SelectTrigger className="bg-background border-border text-foreground">
+                    <SelectValue placeholder="Select Client" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border text-card-foreground">
+                    {clients.map(c => (
+                      <SelectItem key={c.id} value={c.id || 'unknown'}>
+                        {c.companyName} ({c.clientCode})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             {availableProjects.length > 0 && (
@@ -219,7 +228,7 @@ export function InvoiceForm({
                   <SelectContent className="bg-card border-border text-card-foreground">
                     <SelectItem value="unassigned">No specific project</SelectItem>
                     {availableProjects.map(p => (
-                      <SelectItem key={p.id} value={p.id}>
+                      <SelectItem key={p.id} value={p.id || 'unassigned'}>
                         {p.name}
                       </SelectItem>
                     ))}

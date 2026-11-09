@@ -17,10 +17,12 @@ import {
 import { getBankAccounts } from '@/lib/actions/bank'
 import { getEmployees } from '@/lib/actions/hr'
 import { getEmployeeSalaryDetails } from '@/lib/actions/payroll'
+import { getAllAgencyProjects } from '@/lib/actions/agency-clients'
 import { VoucherPrintModal } from '@/components/ap-ar/voucher-print-modal'
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import {
+  Building2,
   Calendar,
   CheckCircle2,
   Clock,
@@ -156,6 +158,7 @@ export default function ExpensesPage() {
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
   const [customCategories, setCustomCategories] = useState<CustomExpenseCategory[]>([])
+  const [projects, setProjects] = useState<any[]>([])
   const [outletId, setOutletId] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [printVoucher, setPrintVoucher] = useState<any | null>(null)
@@ -172,6 +175,7 @@ export default function ExpensesPage() {
   const [expDate, setExpDate] = useState(new Date().toISOString().slice(0, 10))
   const [expCategory, setExpCategory] = useState<string>('Rent')
   const [expCategoryAccountId, setExpCategoryAccountId] = useState('')
+  const [expProjectId, setExpProjectId] = useState<string>('none')
   const [expEmployeeId, setExpEmployeeId] = useState<string>('')
   const [expSalaryMonth, setExpSalaryMonth] = useState<string>(() => {
     const now = new Date()
@@ -198,16 +202,18 @@ export default function ExpensesPage() {
 
   async function loadData(oid: string) {
     if (!oid) return
-    const [expList, banks, emps, categories] = await Promise.all([
+    const [expList, banks, emps, categories, prjs] = await Promise.all([
       getExpenses(oid),
       getBankAccounts(),
       getEmployees(),
       getCustomExpenseCategories(),
+      getAllAgencyProjects(),
     ])
     setExpenses(expList)
     setBankAccounts(banks)
     setEmployees(emps.filter(e => e.isActive))
     setCustomCategories(categories)
+    setProjects(prjs?.projects || [])
   }
 
   useEffect(() => {

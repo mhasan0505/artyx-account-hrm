@@ -161,15 +161,15 @@
 
   --radius: 0.75rem;
 
-  /* SIDEBAR: Deep Obsidian Carbon (#070B06) with neon lime active indicator */
-  --sidebar: #070B06;
-  --sidebar-foreground: #F4F6F0;
-  --sidebar-primary: #7FFF00;
-  --sidebar-primary-foreground: #070B06;
-  --sidebar-accent: rgba(127, 255, 0, 0.12);
-  --sidebar-accent-foreground: #7FFF00;
-  --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: #7FFF00;
+  /* SIDEBAR: Light mode crisp architectural surface with emerald-lime accent */
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #0D140A;
+  --sidebar-primary: #3E7000;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: rgba(62, 112, 0, 0.08);
+  --sidebar-accent-foreground: #3E7000;
+  --sidebar-border: #E2E8F0;
+  --sidebar-ring: #3E7000;
 }
 
 .dark {

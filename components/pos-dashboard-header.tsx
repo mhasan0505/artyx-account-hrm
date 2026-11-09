@@ -157,7 +157,7 @@ export function PosDashboardHeader({
           />
 
           {/* Breadcrumbs */}
-          <div className="hidden sm:flex items-center pl-1 shrink-0 overflow-hidden">
+          <div className="hidden sm:flex items-center pl-1 shrink-0 max-w-xs md:max-w-sm lg:max-w-md overflow-hidden">
             <Breadcrumb>
               <BreadcrumbList className="flex flex-nowrap whitespace-nowrap items-center gap-1.5 text-xs font-medium text-muted-foreground">
                 {breadcrumbs.map((crumb, idx) => {
@@ -169,18 +169,18 @@ export function PosDashboardHeader({
                       )}
                       <BreadcrumbItem className="shrink-0 whitespace-nowrap">
                         {isLast ? (
-                          <BreadcrumbPage className="font-bold text-foreground text-xs whitespace-nowrap">
+                          <BreadcrumbPage className="font-bold text-foreground text-xs whitespace-nowrap truncate max-w-40 inline-block">
                             {crumb.label}
                           </BreadcrumbPage>
                         ) : crumb.href !== '#' ? (
                           <BreadcrumbLink
                             href={crumb.href}
-                            className="text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+                            className="text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap truncate max-w-36 inline-block"
                           >
                             {crumb.label}
                           </BreadcrumbLink>
                         ) : (
-                          <span className="text-muted-foreground/70 whitespace-nowrap">{crumb.label}</span>
+                          <span className="text-muted-foreground/70 whitespace-nowrap truncate max-w-36 inline-block">{crumb.label}</span>
                         )}
                       </BreadcrumbItem>
                     </React.Fragment>

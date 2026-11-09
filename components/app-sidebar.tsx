@@ -74,19 +74,19 @@ function CollapsedRouteTooltip({
         side="right"
         sideOffset={12}
         className={cn(
-          'z-50 inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-slate-900 px-3 py-2 text-xs font-medium text-slate-200 shadow-2xl backdrop-blur-md',
+          'z-50 inline-flex items-center gap-2 rounded-xl border border-border bg-popover px-3 py-2 text-xs font-medium text-popover-foreground shadow-2xl backdrop-blur-md',
           'animate-in fade-in-0 zoom-in-95 data-[side=right]:slide-in-from-left-2 duration-200'
         )}
       >
         {isActive ? (
           <span className="relative flex size-1.5 shrink-0">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#7FFF00] opacity-75" />
-            <span className="relative inline-flex size-1.5 rounded-full bg-[#7FFF00]" />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#3E7000] dark:bg-[#7FFF00] opacity-75" />
+            <span className="relative inline-flex size-1.5 rounded-full bg-[#3E7000] dark:bg-[#7FFF00]" />
           </span>
         ) : (
-          <span className="size-1.5 shrink-0 rounded-full bg-slate-600" />
+          <span className="size-1.5 shrink-0 rounded-full bg-muted-foreground/40" />
         )}
-        <span className="tracking-tight font-medium text-slate-100">{item.title}</span>
+        <span className="tracking-tight font-medium text-foreground">{item.title}</span>
       </TooltipContent>
     </Tooltip>
   )
@@ -115,17 +115,19 @@ function NavItemLink({
         'group/link relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200 ease-out isolation-auto active:scale-[0.98]',
         'group-data-[collapsible=icon]:size-10 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:mx-auto',
         'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50',
-        isActive ? 'text-white font-semibold' : 'text-slate-400 hover:text-slate-100'
+        isActive
+          ? 'text-[#3E7000] dark:text-[#7FFF00] font-bold'
+          : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
       )}
     >
-      {/* Active Indicator with left glowing neon lime accent pill */}
+      {/* Active Indicator with left accent pill */}
       {isActive && (
         <motion.div
           layoutId="sidebar-active-indicator"
-          className="absolute inset-0 bg-gradient-to-r from-[#172215]/95 via-[#131b12]/80 to-transparent border border-[#7FFF00]/30 rounded-xl -z-10 shadow-[0_4px_16px_rgba(0,0,0,0.45)]"
+          className="absolute inset-0 bg-[#3E7000]/10 dark:bg-[#7FFF00]/10 border border-[#3E7000]/25 dark:border-[#7FFF00]/30 rounded-xl -z-10 shadow-2xs"
           transition={{ type: 'spring', stiffness: 400, damping: 30 }}
         >
-          <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-[#7FFF00] shadow-[0_0_10px_rgba(127,255,0,0.8)]" />
+          <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-[#3E7000] dark:bg-[#7FFF00] shadow-[0_0_8px_rgba(127,255,0,0.5)]" />
         </motion.div>
       )}
 
@@ -133,7 +135,7 @@ function NavItemLink({
       {isHovered && !isActive && (
         <motion.div
           layoutId="sidebar-hover-indicator"
-          className="absolute inset-0 bg-[#141b12]/70 border border-[#7FFF00]/10 rounded-xl -z-10"
+          className="absolute inset-0 bg-muted/60 border border-border/40 rounded-xl -z-10"
           transition={{ type: 'spring', stiffness: 420, damping: 32 }}
         />
       )}
@@ -141,7 +143,9 @@ function NavItemLink({
       <span
         className={cn(
           'size-4 shrink-0 flex items-center justify-center [&_svg]:size-4 transition-transform duration-200 group-hover/link:scale-110',
-          isActive ? 'text-[#7FFF00]' : 'text-slate-400 group-hover/link:text-slate-200'
+          isActive
+            ? 'text-[#3E7000] dark:text-[#7FFF00]'
+            : 'text-muted-foreground group-hover/link:text-foreground'
         )}
       >
         {item.icon}
@@ -152,7 +156,7 @@ function NavItemLink({
       </span>
 
       {item.isPrimary && (
-        <span className="rounded-md bg-[#7FFF00]/15 text-[#7FFF00] border border-[#7FFF00]/30 px-1.5 py-0.5 text-[9px] font-bold tracking-wider group-data-[collapsible=icon]:hidden shadow-[0_2px_8px_rgba(127,255,0,0.2)]">
+        <span className="rounded-md bg-[#3E7000]/10 text-[#3E7000] dark:bg-[#7FFF00]/15 dark:text-[#7FFF00] border border-[#3E7000]/25 dark:border-[#7FFF00]/30 px-1.5 py-0.5 text-[9px] font-bold tracking-wider group-data-[collapsible=icon]:hidden">
           NEW
         </span>
       )}
@@ -199,8 +203,8 @@ function NavDropdownItem({
             className={cn(
               'relative flex size-10 items-center justify-center rounded-xl p-0 transition-all duration-200 cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 mx-auto',
               hasActiveChild
-                ? 'bg-[#141b12] border border-[#7FFF00]/30 text-white font-semibold shadow-lg'
-                : 'bg-transparent text-slate-400 hover:bg-[#141b12]/60 hover:text-slate-200'
+                ? 'bg-primary/10 border border-primary/30 text-primary font-semibold shadow-xs'
+                : 'bg-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'
             )}
             title={item.title}
             aria-label={item.title}
@@ -208,28 +212,28 @@ function NavDropdownItem({
             <span
               className={cn(
                 'size-4 shrink-0 flex items-center justify-center [&_svg]:size-4',
-                hasActiveChild ? 'text-[#7FFF00]' : 'text-slate-400'
+                hasActiveChild ? 'text-[#3E7000] dark:text-[#7FFF00]' : 'text-muted-foreground'
               )}
             >
               {item.icon}
             </span>
             {hasActiveChild && (
-              <span className="absolute right-2 top-2 size-1.5 rounded-full bg-[#7FFF00] shadow-[0_0_8px_rgba(127,255,0,0.8)]" />
+              <span className="absolute right-2 top-2 size-1.5 rounded-full bg-[#3E7000] dark:bg-[#7FFF00]" />
             )}
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
           side="right"
           sideOffset={12}
-          className="w-56 p-1.5 shadow-2xl border border-[#7FFF00]/20 bg-[#0f140e] text-slate-300 rounded-xl backdrop-blur-md animate-in fade-in-0 zoom-in-95 data-[side=right]:slide-in-from-left-2 duration-200"
+          className="w-56 p-1.5 shadow-2xl border border-border bg-popover text-popover-foreground rounded-xl backdrop-blur-md animate-in fade-in-0 zoom-in-95 data-[side=right]:slide-in-from-left-2 duration-200"
         >
           <DropdownMenuLabel className="px-2.5 py-2 text-xs font-medium flex items-center gap-2">
-            <span className="size-4 text-[#7FFF00] shrink-0 [&_svg]:size-4">
+            <span className="size-4 text-primary shrink-0 [&_svg]:size-4">
               {item.icon}
             </span>
-            <span className="truncate text-slate-100 font-semibold">{item.title}</span>
+            <span className="truncate text-foreground font-semibold">{item.title}</span>
           </DropdownMenuLabel>
-          <DropdownMenuSeparator className="my-1 border-white/[0.06]" />
+          <DropdownMenuSeparator className="my-1 border-border" />
           <div className="max-h-64 overflow-y-auto flex flex-col gap-0.5">
             {item.subItems?.map(sub => {
               const cleanSubUrl = sub.url.split('?')[0].split('#')[0]
@@ -240,7 +244,7 @@ function NavDropdownItem({
                 <DropdownMenuItem
                   key={sub.url}
                   asChild
-                  className="cursor-pointer focus:bg-[#141b12] focus:text-white rounded-lg"
+                  className="cursor-pointer focus:bg-muted focus:text-foreground rounded-lg"
                 >
                   <Link
                     href={sub.url}
@@ -248,13 +252,13 @@ function NavDropdownItem({
                     className={cn(
                       'flex items-center justify-between rounded-lg px-2.5 py-2 text-xs transition-colors duration-150',
                       isSubActive
-                        ? 'bg-[#141b12] text-white font-bold border border-[#7FFF00]/30 shadow-2xs'
-                        : 'text-slate-400 hover:text-slate-200'
+                        ? 'bg-primary/10 text-primary font-bold border border-primary/25 shadow-2xs'
+                        : 'text-muted-foreground hover:text-foreground'
                     )}
                   >
                     <span className="truncate">{sub.title}</span>
                     {isSubActive && (
-                      <span className="size-1.5 rounded-full bg-[#7FFF00] shadow-[0_0_6px_rgba(127,255,0,0.7)]" />
+                      <span className="size-1.5 rounded-full bg-[#3E7000] dark:bg-[#7FFF00]" />
                     )}
                   </Link>
                 </DropdownMenuItem>
@@ -277,20 +281,22 @@ function NavDropdownItem({
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           'group/btn relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200 ease-out cursor-pointer active:scale-[0.98]',
-          hasActiveChild ? 'text-white' : 'text-slate-400 hover:text-slate-200'
+          hasActiveChild
+            ? 'text-[#3E7000] dark:text-[#7FFF00] font-bold'
+            : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
         )}
       >
         {isHovered && !isOpen && (
           <motion.div
             layoutId="sidebar-hover-indicator"
-            className="absolute inset-0 bg-slate-800/40 border border-white/[0.02] rounded-xl -z-10"
+            className="absolute inset-0 bg-muted/60 border border-border/40 rounded-xl -z-10"
             transition={{ type: 'spring', stiffness: 400, damping: 32 }}
           />
         )}
         <span
           className={cn(
             'size-4 shrink-0 flex items-center justify-center [&_svg]:size-4 transition-transform duration-200 group-hover/btn:scale-110',
-            hasActiveChild ? 'text-[#7FFF00]' : 'text-slate-400 group-hover/btn:text-slate-200'
+            hasActiveChild ? 'text-[#3E7000] dark:text-[#7FFF00]' : 'text-muted-foreground group-hover/btn:text-foreground'
           )}
         >
           {item.icon}
@@ -298,8 +304,8 @@ function NavDropdownItem({
         <span className="flex-1 text-left truncate tracking-tight">{item.title}</span>
         <ChevronRight
           className={cn(
-            'size-3.5 text-slate-500 transition-transform duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] shrink-0 ml-1',
-            isOpen && 'rotate-90 text-[#7FFF00]'
+            'size-3.5 text-muted-foreground transition-transform duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] shrink-0 ml-1',
+            isOpen && 'rotate-90 text-primary'
           )}
         />
       </button>
@@ -313,7 +319,7 @@ function NavDropdownItem({
           )}
         >
           <div className="overflow-hidden">
-            <div className="border-l border-[#7FFF00]/20 ml-5 pl-3 space-y-0.5 my-1">
+            <div className="border-l border-border ml-5 pl-3 space-y-0.5 my-1">
               {item.subItems.map(sub => {
                 const cleanSubUrl = sub.url.split('?')[0].split('#')[0]
                 const isSubActive =
@@ -328,14 +334,14 @@ function NavDropdownItem({
                     className={cn(
                       'flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs transition-all duration-150 active:scale-[0.98]',
                       isSubActive
-                        ? 'text-white font-semibold bg-[#141b12] border border-[#7FFF00]/30 shadow-2xs'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-[#141b12]/50'
+                        ? 'text-primary font-bold bg-primary/10 border border-primary/20 shadow-2xs'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
                     )}
                   >
                     <span
                       className={cn(
                         'size-1.5 rounded-full shrink-0 transition-all duration-150',
-                        isSubActive ? 'bg-[#7FFF00] ring-2 ring-[#7FFF00]/40 shadow-[0_0_6px_rgba(127,255,0,0.7)]' : 'bg-slate-600'
+                        isSubActive ? 'bg-[#3E7000] dark:bg-[#7FFF00] ring-2 ring-primary/30' : 'bg-muted-foreground/40'
                       )}
                     />
                     <span className="truncate">{sub.title}</span>
@@ -450,19 +456,19 @@ export function AppSidebar({
         collapsible="icon"
         {...props}
         className={cn(
-          '!bg-[#070B06] border-r border-[#7FFF00]/15 text-slate-200 shadow-xl print:hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+          'bg-sidebar border-r border-sidebar-border text-sidebar-foreground shadow-xs print:hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
           className
         )}
       >
         {/* Header: Artyx Digital Logo & Collapse Button */}
-        <SidebarHeader className="min-h-16 h-16 justify-center border-b border-slate-800/80 px-3 group-data-[collapsible=icon]:px-2 !bg-[#070B06] shrink-0 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
+        <SidebarHeader className="min-h-16 h-16 justify-center border-b border-sidebar-border px-3 group-data-[collapsible=icon]:px-2 bg-sidebar shrink-0 transition-colors">
           <div className="flex w-full items-center justify-between group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-1.5">
             <Link
               href="/"
               onClick={handleNavigate}
               className="flex items-center gap-2.5 rounded-xl py-1 hover:opacity-90 transition-opacity focus-visible:outline-none min-w-0"
             >
-              <div className="size-9 rounded-lg bg-[#141b12] border border-[#7FFF00]/30 flex items-center justify-center p-1.5 shrink-0 overflow-hidden shadow-xs">
+              <div className="size-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center p-1.5 shrink-0 overflow-hidden shadow-2xs">
                 <Image
                   src="/artyx-icon.svg"
                   alt="Artyx Digital Logo"
@@ -478,10 +484,10 @@ export function AppSidebar({
                   'group-data-[collapsible=icon]:w-0 group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:hidden'
                 )}
               >
-                <h1 className="text-[15px] font-extrabold tracking-tight text-white font-sans truncate leading-none">
+                <h1 className="text-[15px] font-extrabold tracking-tight text-foreground font-sans truncate leading-none">
                   Artyx Digital
                 </h1>
-                <p className="text-[9.5px] font-bold uppercase tracking-wider text-[#7FFF00] font-mono leading-tight mt-1">
+                <p className="text-[9.5px] font-bold uppercase tracking-wider text-primary font-mono leading-tight mt-1">
                   Agency · ERP
                 </p>
               </div>
@@ -497,7 +503,7 @@ export function AppSidebar({
               }}
               title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
               aria-label={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
-              className="size-6.5 rounded-full bg-[#7FFF00]/15 hover:bg-[#7FFF00] active:scale-90 text-[#7FFF00] hover:text-black border border-[#7FFF00]/30 flex items-center justify-center shadow-xs transition-all duration-200 ease-out cursor-pointer shrink-0"
+              className="size-6.5 rounded-full bg-primary/10 hover:bg-primary active:scale-90 text-primary hover:text-primary-foreground border border-primary/25 flex items-center justify-center shadow-2xs transition-all duration-200 ease-out cursor-pointer shrink-0"
             >
               <ChevronsLeft
                 className={cn(
@@ -510,29 +516,29 @@ export function AppSidebar({
         </SidebarHeader>
 
         {/* Content: Sections and Items with Smooth Accordion Transitions */}
-        <SidebarContent className="px-2 py-2 group-data-[collapsible=icon]:px-1 !bg-[#070B06]">
+        <SidebarContent className="px-2 py-2 group-data-[collapsible=icon]:px-1 bg-sidebar">
           {roleNavData.map(section => {
             const isSectionOpen = openSections[section.title] ?? true
 
             return (
               <SidebarGroup
                 key={section.title}
-                className="p-0 group-data-[collapsible=icon]:p-0 my-1 first:mt-0 !bg-[#070B06]"
+                className="p-0 group-data-[collapsible=icon]:p-0 my-1 first:mt-0 bg-sidebar"
               >
                 {/* Clickable Section Dropdown Header */}
                 <div className="group-data-[collapsible=icon]:hidden px-2 pt-2.5 pb-0.5">
                   <button
                     type="button"
                     onClick={() => toggleSection(section.title)}
-                    className="group/sec flex w-full items-center justify-between text-left rounded-lg py-1 px-1.5 transition-colors duration-200 hover:bg-[#141b12] active:scale-[0.99] cursor-pointer select-none"
+                    className="group/sec flex w-full items-center justify-between text-left rounded-lg py-1 px-1.5 transition-colors duration-200 hover:bg-muted/60 active:scale-[0.99] cursor-pointer select-none"
                     aria-expanded={isSectionOpen}
                   >
-                    <span className="text-[11px] font-bold tracking-wider uppercase text-[#A3ABA0] group-hover/sec:text-[#F4F6F0] truncate transition-colors">
+                    <span className="text-[11px] font-bold tracking-wider uppercase text-muted-foreground group-hover/sec:text-foreground truncate transition-colors">
                       {section.title}
                     </span>
                     <ChevronDown
                       className={cn(
-                        'size-3.5 text-slate-500 group-hover/sec:text-[#7FFF00] transition-transform duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] shrink-0 ml-1',
+                        'size-3.5 text-muted-foreground group-hover/sec:text-foreground transition-transform duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] shrink-0 ml-1',
                         isSectionOpen ? 'rotate-0' : '-rotate-90'
                       )}
                     />
@@ -549,7 +555,7 @@ export function AppSidebar({
                   )}
                 >
                   <div className="overflow-hidden">
-                    <SidebarGroupContent className="!bg-[#070B06]">
+                    <SidebarGroupContent className="bg-sidebar">
                       <ul className="flex flex-col gap-0.5 group-data-[collapsible=icon]:items-center">
                         {section.items.map(item => {
                           if (item.subItems?.length) {
@@ -593,10 +599,10 @@ export function AppSidebar({
         </SidebarContent>
 
         {/* Footer: Artyx Digital Agency Suite */}
-        <SidebarFooter className="border-t border-slate-800/80 p-3 group-data-[collapsible=icon]:p-2 !bg-[#070B06] shrink-0 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
-          <div className="rounded-lg border border-white/10 bg-[#121810]/70 px-2.5 py-1.5 text-[11px] leading-tight text-slate-300 group-data-[collapsible=icon]:hidden flex items-center justify-between transition-opacity duration-200">
-            <span className="font-medium text-slate-400">Artyx Office</span>
-            <span className="font-bold text-[#7FFF00]">
+        <SidebarFooter className="border-t border-sidebar-border p-3 group-data-[collapsible=icon]:p-2 bg-sidebar shrink-0 transition-colors">
+          <div className="rounded-lg border border-border bg-muted/40 px-2.5 py-1.5 text-[11px] leading-tight text-muted-foreground group-data-[collapsible=icon]:hidden flex items-center justify-between transition-opacity duration-200">
+            <span className="font-medium text-muted-foreground">Artyx Office</span>
+            <span className="font-bold text-[#3E7000] dark:text-[#7FFF00]">
               <a
                 href="https://www.artyx.digital"
                 target="_blank"
