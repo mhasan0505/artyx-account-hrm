@@ -52,6 +52,8 @@ export const PUBLIC_TO_AUTHENTICATED: readonly string[] = [
   '/',
   '/profile',
   '/search',
+  '/team',
+  '/team/chat',
 ] as const
 
 /**

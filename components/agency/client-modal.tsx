@@ -94,7 +94,7 @@ export function CreateClientModal({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger || (
-          <Button className="bg-[#3E7000] hover:bg-[#346000] text-white dark:bg-[#7FFF00] dark:hover:bg-[#6ee600] dark:text-black font-semibold shadow-xs">
+          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs">
             <Plus className="size-4 mr-1.5" />
             New Client
           </Button>
@@ -103,7 +103,7 @@ export function CreateClientModal({
       <DialogContent className="max-w-2xl bg-card border-border text-card-foreground max-h-[90vh] overflow-y-auto shadow-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl font-bold text-foreground">
-            <UserPlus className="size-5 text-[#3E7000] dark:text-[#7FFF00]" />
+            <UserPlus className="size-5 text-primary" />
             Register New Agency Client
           </DialogTitle>
         </DialogHeader>
@@ -261,7 +261,7 @@ export function CreateClientModal({
             <Button
               type="submit"
               disabled={loading}
-              className="bg-[#3E7000] hover:bg-[#346000] text-white dark:bg-[#7FFF00] dark:hover:bg-[#6ee600] dark:text-black font-semibold shadow-xs"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs"
             >
               {loading ? 'Creating...' : 'Create Client'}
             </Button>

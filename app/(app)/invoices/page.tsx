@@ -46,7 +46,7 @@ export default async function InvoicesPage({
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border pb-5">
         <div>
           <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-[#3E7000] dark:bg-[#7FFF00]" />
+            <span className="h-2 w-2 rounded-full bg-primary" />
             <h1 className="text-2xl md:text-3xl font-extrabold text-foreground tracking-tight">
               Service Invoices & Billing
             </h1>
@@ -64,7 +64,7 @@ export default async function InvoicesPage({
             </Button>
           </Link>
           <Link href="/invoices/new">
-            <Button className="bg-[#3E7000] hover:bg-[#356000] text-white dark:bg-[#7FFF00] dark:hover:bg-[#6ee600] dark:text-black font-semibold shadow-xs">
+            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs">
               <Plus className="size-4 mr-1.5" />
               Create Invoice
             </Button>
@@ -77,7 +77,7 @@ export default async function InvoicesPage({
         <Card className="bg-card border-border/80 text-card-foreground artyx-card rounded-2xl shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold text-muted-foreground">Total Invoiced</CardTitle>
-            <Receipt className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />
+            <Receipt className="size-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-mono text-foreground">৳{summary.totalInvoiced.toLocaleString()}</div>
@@ -88,10 +88,10 @@ export default async function InvoicesPage({
         <Card className="bg-card border-border/80 text-card-foreground artyx-card rounded-2xl shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold text-muted-foreground">Total Collected</CardTitle>
-            <CheckCircle2 className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />
+            <CheckCircle2 className="size-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-mono text-[#3E7000] dark:text-[#7FFF00]">
+            <div className="text-2xl font-bold font-mono text-primary">
               ৳{summary.totalReceived.toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground mt-1">Cash received in agency accounts</p>
@@ -137,7 +137,7 @@ export default async function InvoicesPage({
             <option value="OVERDUE">Overdue</option>
           </select>
 
-          <Button type="submit" size="sm" className="bg-[#3E7000] hover:bg-[#346000] text-white dark:bg-[#7FFF00] dark:hover:bg-[#6ee600] dark:text-black font-semibold">
+          <Button type="submit" size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
             Filter
           </Button>
         </div>
@@ -151,7 +151,7 @@ export default async function InvoicesPage({
             <h3 className="text-lg font-semibold text-foreground">No invoices found</h3>
             <p className="text-sm text-muted-foreground">Create your first client invoice.</p>
             <Link href="/invoices/new">
-              <Button className="bg-[#3E7000] hover:bg-[#346000] text-white dark:bg-[#7FFF00] dark:hover:bg-[#6ee600] dark:text-black font-semibold">
+              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
                 Create Invoice
               </Button>
             </Link>

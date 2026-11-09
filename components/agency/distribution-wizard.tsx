@@ -84,7 +84,7 @@ export function DistributionWizard() {
       <Card className="bg-card border-border/80 text-card-foreground artyx-card rounded-2xl shadow-xs">
         <CardHeader className="pb-3 border-b border-border">
           <CardTitle className="text-base font-bold flex items-center gap-2 text-foreground">
-            <Calculator className="size-5 text-[#3E7000] dark:text-[#7FFF00]" />
+            <Calculator className="size-5 text-primary" />
             Profit Share Calculator & Distribution Wizard
           </CardTitle>
         </CardHeader>
@@ -128,7 +128,7 @@ export function DistributionWizard() {
                 type="button"
                 onClick={handleCalculate}
                 disabled={loadingPreview}
-                className="w-full bg-[#3E7000] hover:bg-[#346000] text-white dark:bg-[#7FFF00] dark:hover:bg-[#6ee600] dark:text-black font-semibold shadow-xs"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs"
               >
                 {loadingPreview ? 'Calculating...' : 'Calculate Profit Split'}
               </Button>
@@ -192,7 +192,7 @@ export function DistributionWizard() {
 
             <div className="bg-muted/50 p-3 rounded-xl border border-border col-span-2 md:col-span-1">
               <span className="text-muted-foreground uppercase text-[10px] block">Distributable Profit</span>
-              <span className="font-mono font-bold text-base text-[#3E7000] dark:text-[#7FFF00]">
+              <span className="font-mono font-bold text-base text-primary">
                 ৳{preview.distributableProfit.toLocaleString()}
               </span>
             </div>
@@ -230,7 +230,7 @@ export function DistributionWizard() {
                       <td className="px-4 py-3 text-right font-mono text-orange-600 dark:text-orange-400">
                         -৳{owner.drawingsInPeriod.toLocaleString()}
                       </td>
-                      <td className="px-4 py-3 text-right font-mono font-bold text-[#3E7000] dark:text-[#7FFF00] text-sm">
+                      <td className="px-4 py-3 text-right font-mono font-bold text-primary text-sm">
                         ৳{owner.netPayable.toLocaleString()}
                       </td>
                     </tr>
@@ -254,7 +254,7 @@ export function DistributionWizard() {
               type="button"
               onClick={handleCreateBatch}
               disabled={creatingBatch || preview.distributableProfit <= 0}
-              className="bg-[#3E7000] hover:bg-[#346000] text-white dark:bg-[#7FFF00] dark:hover:bg-[#6ee600] dark:text-black font-semibold shadow-xs"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs"
             >
               <CheckCircle2 className="size-4 mr-1.5" />
               {creatingBatch ? 'Approving...' : 'Approve & Create Distribution Batch'}

@@ -51,7 +51,7 @@ export default async function ProjectsPage({
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border pb-5">
         <div>
           <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-[#3E7000] dark:bg-[#7FFF00]" />
+            <span className="h-2 w-2 rounded-full bg-primary" />
             <h1 className="text-2xl md:text-3xl font-extrabold text-foreground tracking-tight">
               Agency Projects & Contracts
             </h1>
@@ -77,7 +77,7 @@ export default async function ProjectsPage({
         <Card className="bg-card border-border/80 text-card-foreground artyx-card rounded-2xl shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold text-muted-foreground">Total Projects</CardTitle>
-            <Briefcase className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />
+            <Briefcase className="size-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-mono text-foreground">{stats.totalProjects}</div>
@@ -90,10 +90,10 @@ export default async function ProjectsPage({
         <Card className="bg-card border-border/80 text-card-foreground artyx-card rounded-2xl shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold text-muted-foreground">Contract Pipeline</CardTitle>
-            <DollarSign className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />
+            <DollarSign className="size-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-mono text-[#3E7000] dark:text-[#7FFF00]">
+            <div className="text-2xl font-bold font-mono text-primary">
               ৳{stats.totalContractValue.toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground mt-1">Total agreed contract value</p>
@@ -141,7 +141,7 @@ export default async function ProjectsPage({
                 variant={isActive ? 'default' : 'outline'}
                 className={
                   isActive
-                    ? 'bg-[#3E7000] hover:bg-[#346000] text-white dark:bg-[#7FFF00] dark:hover:bg-[#6ee600] dark:text-black font-semibold shadow-xs'
+                    ? 'bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs'
                     : 'border-border text-foreground hover:bg-muted'
                 }
               >
@@ -195,7 +195,7 @@ export default async function ProjectsPage({
                       <h3 className="text-base font-bold text-foreground mt-1.5 leading-snug">
                         {proj.name}
                       </h3>
-                      <p className="text-xs text-[#3E7000] dark:text-[#7FFF00] font-medium mt-0.5">
+                      <p className="text-xs text-primary font-medium mt-0.5">
                         {proj.serviceCategory}
                       </p>
                     </div>
@@ -248,6 +248,11 @@ export default async function ProjectsPage({
                     </span>
 
                     <div className="flex items-center gap-2">
+                      <Link href={`/projects/${proj.id}`}>
+                        <Button size="sm" variant="outline" className="text-xs h-7 px-2.5 border-border font-semibold text-primary">
+                          Open Workspace
+                        </Button>
+                      </Link>
                       <Link href={`/invoices/new?clientId=${proj.client.id}`}>
                         <Button size="sm" variant="ghost" className="text-xs text-sky-600 dark:text-sky-400 hover:text-sky-500 h-7 px-2">
                           + Invoice

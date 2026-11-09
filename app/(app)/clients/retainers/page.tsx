@@ -49,10 +49,10 @@ export default async function RetainersPage() {
         <Card className="bg-card border-border/80 text-card-foreground artyx-card rounded-2xl shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold text-muted-foreground">Active Retainers</CardTitle>
-            <CalendarCheck className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />
+            <CalendarCheck className="size-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-mono text-[#3E7000] dark:text-[#7FFF00]">{stats.activeCount}</div>
+            <div className="text-2xl font-bold font-mono text-primary">{stats.activeCount}</div>
             <p className="text-xs text-muted-foreground mt-1">Currently being billed</p>
           </CardContent>
         </Card>

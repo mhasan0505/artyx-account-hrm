@@ -30,6 +30,8 @@ type LineItem = {
 export function InvoiceForm({
   clients = [],
   preselectedClientId,
+  preselectedProjectId,
+  initialLineItem,
 }: {
   clients: Array<{
     id: string
@@ -39,12 +41,19 @@ export function InvoiceForm({
     projects: Array<{ id: string; name: string }>
   }>
   preselectedClientId?: string
+  preselectedProjectId?: string
+  initialLineItem?: {
+    description: string
+    serviceCategory: string
+    quantity: number
+    unitPrice: number
+  }
 }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
   const [clientId, setClientId] = useState(preselectedClientId || clients[0]?.id || '')
-  const [projectId, setProjectId] = useState('')
+  const [projectId, setProjectId] = useState(preselectedProjectId || '')
   const [issueDate, setIssueDate] = useState(new Date().toISOString().split('T')[0])
   const [dueDate, setDueDate] = useState(
     new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
@@ -57,13 +66,21 @@ export function InvoiceForm({
   )
 
   const [items, setItems] = useState<LineItem[]>([
-    {
-      id: '1',
-      description: 'Custom Web Application Development — Phase 1 Milestone',
-      serviceCategory: 'Software Development',
-      quantity: 1,
-      unitPrice: 50000,
-    },
+    initialLineItem
+      ? {
+          id: '1',
+          description: initialLineItem.description,
+          serviceCategory: initialLineItem.serviceCategory,
+          quantity: initialLineItem.quantity,
+          unitPrice: initialLineItem.unitPrice,
+        }
+      : {
+          id: '1',
+          description: 'Custom Web Application Development — Phase 1 Milestone',
+          serviceCategory: 'Software Development',
+          quantity: 1,
+          unitPrice: 50000,
+        },
   ])
 
   const selectedClient = clients.find(c => c.id === clientId)
@@ -179,7 +196,7 @@ export function InvoiceForm({
           <Button
             type="submit"
             disabled={loading}
-            className="bg-[#3E7000] hover:bg-[#346000] text-white dark:bg-[#7FFF00] dark:hover:bg-[#6ee600] dark:text-black font-semibold shadow-xs"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs"
           >
             {loading ? 'Creating...' : 'Issue Invoice'}
           </Button>
@@ -273,7 +290,7 @@ export function InvoiceForm({
               <Label className="text-xs text-muted-foreground font-medium">Invoice Currency</Label>
               <div className="bg-muted/60 border border-border rounded-md p-2 font-mono text-foreground flex justify-between items-center">
                 <span>BDT (Bangladeshi Taka)</span>
-                <span className="text-[#3E7000] dark:text-[#7FFF00] font-bold">৳</span>
+                <span className="text-primary font-bold">৳</span>
               </div>
             </div>
           </CardContent>
@@ -290,7 +307,7 @@ export function InvoiceForm({
                 type="button"
                 size="sm"
                 onClick={addItem}
-                className="border-border text-[#3E7000] dark:text-[#7FFF00] hover:bg-muted text-xs"
+                className="border-border text-primary hover:bg-muted text-xs"
                 variant="outline"
               >
                 <Plus className="size-3.5 mr-1" />
@@ -409,7 +426,7 @@ export function InvoiceForm({
 
                 <div className="flex justify-between text-base font-bold text-foreground border-t border-border pt-2">
                   <span>Total Amount:</span>
-                  <span className="font-mono text-[#3E7000] dark:text-[#7FFF00]">৳{totalAmount.toLocaleString()}</span>
+                  <span className="font-mono text-primary">৳{totalAmount.toLocaleString()}</span>
                 </div>
               </div>
             </CardContent>

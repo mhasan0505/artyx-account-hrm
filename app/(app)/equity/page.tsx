@@ -56,7 +56,7 @@ export default async function EquityPage() {
             </Button>
           </Link>
           <Link href="/equity/distributions">
-            <Button className="bg-[#3E7000] hover:bg-[#356000] text-white dark:bg-[#7FFF00] dark:hover:bg-[#6ee600] dark:text-black font-semibold shadow-xs">
+            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs">
               <Coins className="size-4 mr-1.5" />
               Distribute Profit
             </Button>
@@ -70,7 +70,7 @@ export default async function EquityPage() {
         <Card className="bg-card border-border/80 text-card-foreground artyx-card rounded-2xl shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold text-muted-foreground">Total Equity Allocated</CardTitle>
-            <Scale className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />
+            <Scale className="size-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-mono text-foreground">
@@ -78,7 +78,7 @@ export default async function EquityPage() {
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               {summary.isEquityBalanced ? (
-                <span className="text-[#3E7000] dark:text-[#7FFF00] font-medium font-mono">✓ 100% Fully Allocated</span>
+                <span className="text-primary font-medium font-mono">✓ 100% Fully Allocated</span>
               ) : (
                 <span className="text-amber-600 dark:text-amber-400 font-medium font-mono">
                   {(100 - summary.totalEquityPercentage).toFixed(1)}% Available unallocated
@@ -91,10 +91,10 @@ export default async function EquityPage() {
         <Card className="bg-card border-border/80 text-card-foreground artyx-card rounded-2xl shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold text-muted-foreground">Partner Capital Balance</CardTitle>
-            <DollarSign className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />
+            <DollarSign className="size-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-mono text-[#3E7000] dark:text-[#7FFF00]">
+            <div className="text-2xl font-bold font-mono text-primary">
               ৳{summary.totalCapitalPool.toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground mt-1">Net partner capital remaining in agency</p>
@@ -117,10 +117,10 @@ export default async function EquityPage() {
         <Card className="bg-card border-border/80 text-card-foreground artyx-card rounded-2xl shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold text-muted-foreground">Profit Distributed to Date</CardTitle>
-            <Coins className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />
+            <Coins className="size-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-mono text-[#3E7000] dark:text-[#7FFF00]">
+            <div className="text-2xl font-bold font-mono text-primary">
               ৳{summary.totalCumulativeDistributed.toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground mt-1">Net dividend payouts disbursed</p>
@@ -132,7 +132,7 @@ export default async function EquityPage() {
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-            <Users className="size-5 text-[#3E7000] dark:text-[#7FFF00]" />
+            <Users className="size-5 text-primary" />
             Agency Partners & Ownership Structure
           </h2>
           <span className="text-xs text-muted-foreground">
@@ -168,7 +168,7 @@ export default async function EquityPage() {
                     <div className="flex justify-between items-start gap-2">
                       <div>
                         <h3 className="text-base font-bold text-foreground leading-snug">{owner.name}</h3>
-                        <p className="text-xs text-[#3E7000] dark:text-[#7FFF00] font-medium mt-0.5">{owner.title}</p>
+                        <p className="text-xs text-primary font-medium mt-0.5">{owner.title}</p>
                         {owner.email && <p className="text-[11px] text-muted-foreground font-mono mt-1">{owner.email}</p>}
                       </div>
                       <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 text-xs font-mono font-bold">
@@ -179,7 +179,7 @@ export default async function EquityPage() {
                     {/* Equity visual bar */}
                     <div className="w-full bg-muted rounded-full h-2 mt-3 overflow-hidden border border-border">
                       <div
-                        className="bg-[#3E7000] dark:bg-[#7FFF00] h-full rounded-full transition-all duration-500"
+                        className="bg-primary h-full rounded-full transition-all duration-500"
                         style={{ width: `${Math.min(100, eqPct)}%` }}
                       />
                     </div>
@@ -201,7 +201,7 @@ export default async function EquityPage() {
                       </div>
                       <div className="col-span-2 pt-1 border-t border-border">
                         <span className="text-[10px] text-muted-foreground uppercase font-medium block">Total Dividends Distributed</span>
-                        <span className="font-mono font-bold text-[#3E7000] dark:text-[#7FFF00]">
+                        <span className="font-mono font-bold text-primary">
                           ৳{distributed.toLocaleString()}
                         </span>
                       </div>

@@ -328,6 +328,11 @@ model User {
   attendances               Attendance[]
   leaveRequests             LeaveRequest[]
   employee                  Employee?                @relation("UserEmployee")
+  assignedTasks             ProjectTask[]            @relation("TaskAssignee")
+  createdTasks              ProjectTask[]            @relation("TaskCreator")
+  taskTimeLogs              TaskTimeLog[]            @relation("TaskTimeLogUser")
+  taskComments              TaskComment[]            @relation("TaskCommentUser")
+  chatMessages              TeamChatMessage[]        @relation("ChatMessages")
   auditLogs                 AuditLog[]
   saleEditLogs              SaleEditLog[]            @relation("SaleEdits")
   purchaseInvoiceEditLogs   PurchaseInvoiceEditLog[] @relation("PurchaseInvoiceEdits")
@@ -2072,6 +2077,115 @@ model AgencyProject {
 
   invoices           AgencyInvoice[]
   expenses           Expense[]
+  milestones         ProjectMilestone[]
+  tasks              ProjectTask[]
+}
+
+enum TaskStatus {
+  BACKLOG
+  TODO
+  IN_PROGRESS
+  IN_REVIEW
+  DONE
+  BLOCKED
+}
+
+enum TaskPriority {
+  URGENT
+  HIGH
+  NORMAL
+  LOW
+}
+
+model ProjectMilestone {
+  id             String         @id @default(cuid())
+  projectId      String
+  project        AgencyProject  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title          String
+  description    String?
+  targetDate     DateTime?
+  completedDate  DateTime?
+  billableAmount Decimal?       @db.Decimal(14, 2)
+  isBilled       Boolean        @default(false)
+  status         String         @default("PLANNED") // PLANNED, IN_PROGRESS, COMPLETED
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  tasks          ProjectTask[]
+
+  @@index([projectId])
+}
+
+model ProjectTask {
+  id             String              @id @default(cuid())
+  taskCode       String              @unique
+  projectId      String
+  project        AgencyProject       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  milestoneId    String?
+  milestone      ProjectMilestone?   @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
+  title          String
+  description    String?
+  status         TaskStatus          @default(TODO)
+  priority       TaskPriority        @default(NORMAL)
+  assigneeId     String?
+  assignee       User?               @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  creatorId      String
+  creator        User                @relation("TaskCreator", fields: [creatorId], references: [id])
+  startDate      DateTime?
+  dueDate        DateTime?
+  estimatedHours Decimal?            @db.Decimal(6, 2)
+  orderIndex     Int                 @default(0)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  checklists     TaskChecklistItem[]
+  timeLogs       TaskTimeLog[]
+  comments       TaskComment[]
+
+  @@index([projectId, status])
+  @@index([assigneeId])
+  @@index([milestoneId])
+}
+
+model TaskChecklistItem {
+  id          String      @id @default(cuid())
+  taskId      String
+  task        ProjectTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  title       String
+  isCompleted Boolean     @default(false)
+  orderIndex  Int         @default(0)
+  createdAt   DateTime    @default(now())
+
+  @@index([taskId])
+}
+
+model TaskTimeLog {
+  id         String      @id @default(cuid())
+  taskId     String
+  task       ProjectTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User        @relation("TaskTimeLogUser", fields: [userId], references: [id])
+  hours      Decimal     @db.Decimal(6, 2)
+  logDate    DateTime    @default(now())
+  hourlyRate Decimal?    @db.Decimal(10, 2)
+  notes      String?
+  isBillable Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+
+  @@index([taskId, userId])
+}
+
+model TaskComment {
+  id        String      @id @default(cuid())
+  taskId    String
+  task      ProjectTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User        @relation("TaskCommentUser", fields: [userId], references: [id])
+  content   String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([taskId])
 }
 
 model ClientRetainer {
@@ -2252,3 +2366,37 @@ model OwnerEquityLedger {
   reference          String?
   description        String
 }
+
+// ─────────────────────────────────────────────
+// TEAM REAL-TIME CHAT (Socket.IO)
+// ─────────────────────────────────────────────
+
+model TeamChatChannel {
+  id          String            @id @default(cuid())
+  name        String
+  slug        String            @unique
+  description String?
+  isDirect    Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  messages    TeamChatMessage[]
+}
+
+model TeamChatMessage {
+  id             String          @id @default(cuid())
+  channelId      String
+  channel        TeamChatChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User            @relation("ChatMessages", fields: [userId], references: [id], onDelete: Cascade)
+  content        String          @db.Text
+  attachmentUrl  String?         @db.Text
+  attachmentName String?
+  attachmentType String?
+  attachmentSize Int?
+  createdAt      DateTime        @default(now())
+
+  @@index([channelId, createdAt])
+  @@index([userId])
+}
+

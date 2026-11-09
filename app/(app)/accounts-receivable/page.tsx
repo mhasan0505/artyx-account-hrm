@@ -105,7 +105,7 @@ export default async function AccountsReceivablePage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="pb-3">
-            <div className="text-xl font-bold font-mono text-[#3E7000] dark:text-[#7FFF00]">
+            <div className="text-xl font-bold font-mono text-primary">
               ৳{agingSummary.totalOutstanding.toLocaleString()}
             </div>
           </CardContent>

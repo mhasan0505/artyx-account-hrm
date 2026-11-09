@@ -20,7 +20,7 @@ const AGENCY_REPORTS = [
     href: '/finances/profit-loss',
     icon: PieChart,
     badge: 'Real-Time Telemetry',
-    color: 'text-[#3E7000] dark:text-[#7FFF00]',
+    color: 'text-primary',
   },
   {
     id: 'project-profitability',
@@ -66,7 +66,7 @@ export default function ReportsHubPage() {
       {/* Header */}
       <div className="border-b border-border pb-5">
         <div className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-[#3E7000] dark:bg-[#7FFF00]" />
+          <span className="h-2 w-2 rounded-full bg-primary" />
           <h1 className="text-2xl md:text-3xl font-extrabold text-foreground tracking-tight">
             Agency Financial & Audit Reports
           </h1>

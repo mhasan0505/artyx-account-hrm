@@ -90,7 +90,7 @@ export default async function InvoiceDetailPage({
                 <h2 className="text-xl font-extrabold text-foreground print:text-black tracking-tight leading-none">
                   Artyx Digital
                 </h2>
-                <span className="text-[10px] font-mono font-semibold uppercase text-[#3E7000] dark:text-[#7FFF00] print:text-emerald-700 tracking-wider">
+                <span className="text-[10px] font-mono font-semibold uppercase text-primary print:text-emerald-700 tracking-wider">
                   Software & Digital Marketing Agency
                 </span>
               </div>
@@ -109,13 +109,13 @@ export default async function InvoiceDetailPage({
                     ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-xs'
                     : invoice.status === 'PARTIAL'
                       ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 text-xs'
-                      : 'bg-[#3E7000]/10 text-[#3E7000] dark:bg-[#7FFF00]/15 dark:text-[#7FFF00] border-[#3E7000]/30 dark:border-[#7FFF00]/30 text-xs'
+                      : 'bg-primary/10 text-primary dark:bg-lime/15 dark:text-lime border-primary/30 text-xs'
                 }
               >
                 {invoice.status}
               </Badge>
             </div>
-            <p className="text-sm font-mono font-bold text-[#3E7000] dark:text-[#7FFF00] print:text-emerald-700">
+            <p className="text-sm font-mono font-bold text-primary print:text-emerald-700">
               {invoice.invoiceNumber}
             </p>
             <div className="text-xs text-muted-foreground print:text-slate-600 space-y-0.5 pt-1">
@@ -129,7 +129,7 @@ export default async function InvoiceDetailPage({
         {/* Billed To & Project Information */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs">
           <div className="space-y-1.5 bg-muted/50 print:bg-slate-50 p-4 rounded-xl border border-border print:border-slate-200">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-[#3E7000] dark:text-[#7FFF00] print:text-emerald-700 font-bold">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-primary print:text-emerald-700 font-bold">
               Billed To:
             </span>
             <p className="text-sm font-bold text-foreground print:text-black">{invoice.client.companyName}</p>
@@ -237,7 +237,7 @@ export default async function InvoiceDetailPage({
 
             <div className="flex justify-between text-base font-bold text-foreground print:text-black border-t border-border print:border-slate-200 pt-2">
               <span>Total Amount:</span>
-              <span className="font-mono text-[#3E7000] dark:text-[#7FFF00] print:text-emerald-700">
+              <span className="font-mono text-primary print:text-emerald-700">
                 ৳{Number(invoice.totalAmount).toLocaleString()}
               </span>
             </div>

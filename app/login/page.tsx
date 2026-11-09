@@ -111,7 +111,7 @@ export default function LoginPage() {
                 className="object-contain"
               />
             </div>
-            <div className="absolute -bottom-1 -right-1 size-5 rounded-full bg-[#7FFF00] text-black flex items-center justify-center shadow-xs">
+            <div className="absolute -bottom-1 -right-1 size-5 rounded-full bg-lime text-black flex items-center justify-center shadow-xs">
               <ShieldCheck className="size-3" />
             </div>
           </div>

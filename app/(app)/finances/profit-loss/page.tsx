@@ -24,7 +24,7 @@ export default async function ProfitLossPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border pb-5">
         <div>
           <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-[#3E7000] dark:bg-[#7FFF00]" />
+            <span className="h-2 w-2 rounded-full bg-primary" />
             <h1 className="text-2xl md:text-3xl font-extrabold text-foreground tracking-tight">
               Agency Profit & Loss (P&L) Statement
             </h1>
@@ -42,7 +42,7 @@ export default async function ProfitLossPage() {
             </Button>
           </Link>
           <Link href="/equity/distributions">
-            <Button className="bg-[#3E7000] hover:bg-[#356000] text-white dark:bg-[#7FFF00] dark:hover:bg-[#6ee600] dark:text-black font-semibold shadow-xs">
+            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs">
               <Coins className="size-4 mr-1.5" />
               Distribute Net Profit
             </Button>
@@ -55,7 +55,7 @@ export default async function ProfitLossPage() {
         <Card className="bg-card border-border/80 text-card-foreground artyx-card rounded-2xl shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold text-muted-foreground">Total Agency Revenue</CardTitle>
-            <TrendingUp className="size-4 text-sky-600 dark:text-[#7FFF00]" />
+            <TrendingUp className="size-4 text-sky-600 dark:text-lime" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-mono text-foreground">
@@ -68,13 +68,13 @@ export default async function ProfitLossPage() {
         <Card className="bg-card border-border/80 text-card-foreground artyx-card rounded-2xl shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold text-muted-foreground">Gross Profit (Margin %)</CardTitle>
-            <PieChart className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />
+            <PieChart className="size-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-mono text-[#3E7000] dark:text-[#7FFF00]">
+            <div className="text-2xl font-bold font-mono text-primary">
               ৳{pl.grossProfit.toLocaleString()}
             </div>
-            <p className="text-xs text-[#3E7000] dark:text-[#7FFF00] font-semibold mt-1 font-mono">
+            <p className="text-xs text-primary font-semibold mt-1 font-mono">
               {pl.grossMarginPct}% Gross Margin
             </p>
           </CardContent>
@@ -83,13 +83,13 @@ export default async function ProfitLossPage() {
         <Card className="bg-card border-border/80 text-card-foreground artyx-card rounded-2xl shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold text-muted-foreground">Net Operating Profit (EBITDA)</CardTitle>
-            <Coins className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />
+            <Coins className="size-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold font-mono ${pl.netProfit >= 0 ? 'text-[#3E7000] dark:text-[#7FFF00]' : 'text-rose-600 dark:text-rose-400'}`}>
+            <div className={`text-2xl font-bold font-mono ${pl.netProfit >= 0 ? 'text-primary' : 'text-rose-600 dark:text-rose-400'}`}>
               ৳{pl.netProfit.toLocaleString()}
             </div>
-            <p className={`text-xs font-semibold mt-1 font-mono ${pl.netProfit >= 0 ? 'text-[#3E7000] dark:text-[#7FFF00]' : 'text-rose-600 dark:text-rose-400'}`}>
+            <p className={`text-xs font-semibold mt-1 font-mono ${pl.netProfit >= 0 ? 'text-primary' : 'text-rose-600 dark:text-rose-400'}`}>
               {pl.netMarginPct}% Net Operating Margin
             </p>
           </CardContent>
@@ -160,11 +160,11 @@ export default async function ProfitLossPage() {
           <div className="p-5 flex justify-between items-center font-bold text-base bg-muted/40 dark:bg-[#141b12]/80">
             <div>
               <span className="text-foreground">GROSS PROFIT</span>
-              <span className="text-xs text-[#3E7000] dark:text-[#7FFF00] font-medium block">
+              <span className="text-xs text-primary font-medium block">
                 {pl.grossMarginPct}% of gross revenue
               </span>
             </div>
-            <span className="font-mono text-[#3E7000] dark:text-[#7FFF00] text-lg font-extrabold">
+            <span className="font-mono text-primary text-lg font-extrabold">
               ৳{pl.grossProfit.toLocaleString()}
             </span>
           </div>
@@ -215,14 +215,14 @@ export default async function ProfitLossPage() {
           </div>
 
           {/* NET OPERATING PROFIT ROW */}
-          <div className="p-5 flex justify-between items-center font-bold text-lg bg-[#070B06] text-white border-t-2 border-[#3E7000] dark:border-[#7FFF00]/40">
+          <div className="p-5 flex justify-between items-center font-bold text-lg bg-[#070B06] text-white border-t-2 border-primary dark:border-lime/40">
             <div>
               <span className="text-white">NET OPERATING PROFIT (EBITDA)</span>
-              <span className="text-xs text-[#7FFF00] font-normal block font-mono">
+              <span className="text-xs text-lime font-normal block font-mono">
                 Available for retained reserve and partner dividend distribution
               </span>
             </div>
-            <span className={`font-mono text-xl font-extrabold ${pl.netProfit >= 0 ? 'text-[#7FFF00]' : 'text-rose-400'}`}>
+            <span className={`font-mono text-xl font-extrabold ${pl.netProfit >= 0 ? 'text-lime' : 'text-rose-400'}`}>
               ৳{pl.netProfit.toLocaleString()}
             </span>
           </div>

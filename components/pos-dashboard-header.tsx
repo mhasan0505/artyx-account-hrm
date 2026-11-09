@@ -7,6 +7,7 @@ import {
   FileText,
   KeyRound,
   LogOut,
+  MessageSquare,
   Plus,
   Receipt,
   SearchIcon,
@@ -59,8 +60,6 @@ type PosDashboardHeaderProps = {
 
 export function PosDashboardHeader({
   userName,
-  outletName,
-  outletId,
   userRole,
   userImage,
   className,
@@ -213,7 +212,7 @@ export function PosDashboardHeader({
             className="hidden xl:inline-flex items-center gap-1.5 px-2.5 h-8.5 rounded-xl border border-border/80 bg-muted/40 text-xs font-semibold text-foreground shadow-2xs select-none"
             title="Accounting Currency: Bangladeshi Taka (BDT ৳)"
           >
-            <span className="text-[#3E7000] dark:text-[#7FFF00] font-black text-sm">৳</span>
+            <span className="text-primary font-black text-sm">৳</span>
             <span className="tracking-tight text-xs font-mono font-bold">BDT</span>
           </div>
 
@@ -223,7 +222,7 @@ export function PosDashboardHeader({
             className="hidden 2xl:inline-flex items-center gap-1.5 px-3 h-8.5 rounded-xl border border-border/80 bg-muted/40 hover:bg-muted text-xs font-semibold text-foreground transition-all cursor-pointer shadow-2xs"
             title="Real-Time Agency P&L Intelligence"
           >
-            <TrendingUp className="size-3.5 text-[#3E7000] dark:text-[#7FFF00]" />
+            <TrendingUp className="size-3.5 text-primary" />
             <span className="text-[11px] font-mono tracking-tight text-foreground font-bold">P&L Intelligence</span>
           </Link>
 
@@ -234,7 +233,7 @@ export function PosDashboardHeader({
                 type="button"
                 className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-border hover:border-primary/40 bg-card hover:bg-muted/60 active:scale-95 px-3 h-8.5 text-xs font-semibold text-foreground shadow-2xs transition-all cursor-pointer"
               >
-                <Plus className="size-3.5 stroke-[2.5] text-[#3E7000] dark:text-[#7FFF00]" />
+                <Plus className="size-3.5 stroke-[2.5] text-primary" />
                 <span>Quick Create</span>
                 <ChevronDown className="size-3 text-muted-foreground ml-0.5" />
               </button>
@@ -242,31 +241,31 @@ export function PosDashboardHeader({
             <DropdownMenuContent align="end" className="w-56 p-1.5 shadow-xl border-border/80 rounded-xl">
               <DropdownMenuItem asChild className="cursor-pointer rounded-lg py-2">
                 <Link href="/invoices/new" className="flex items-center gap-2.5 font-medium">
-                  <FileText className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />
+                  <FileText className="size-4 text-primary" />
                   <span>New Service Invoice</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild className="cursor-pointer rounded-lg py-2">
                 <Link href="/clients" className="flex items-center gap-2.5 font-medium">
-                  <Briefcase className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />
+                  <Briefcase className="size-4 text-primary" />
                   <span>Add New Client</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild className="cursor-pointer rounded-lg py-2">
                 <Link href="/clients/credentials" className="flex items-center gap-2.5 font-medium">
-                  <KeyRound className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />
+                  <KeyRound className="size-4 text-primary" />
                   <span>Store Client Credential</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild className="cursor-pointer rounded-lg py-2">
                 <Link href="/expenses" className="flex items-center gap-2.5 font-medium">
-                  <Receipt className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />
+                  <Receipt className="size-4 text-primary" />
                   <span>Record Agency Expense</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild className="cursor-pointer rounded-lg py-2">
                 <Link href="/equity/distributions" className="flex items-center gap-2.5 font-medium">
-                  <Coins className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />
+                  <Coins className="size-4 text-primary" />
                   <span>Partner Profit Distribution</span>
                 </Link>
               </DropdownMenuItem>
@@ -276,7 +275,7 @@ export function PosDashboardHeader({
           {/* Primary Quick Invoice Action Button */}
           <Link
             href="/invoices/new"
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[#3E7000] hover:bg-[#346000] text-white dark:bg-[#7FFF00] dark:hover:bg-[#72e600] dark:text-black active:scale-95 px-3.5 h-8.5 text-xs font-bold shadow-2xs transition-all cursor-pointer shrink-0"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground active:scale-95 px-3.5 h-8.5 text-xs font-bold shadow-2xs transition-all cursor-pointer shrink-0"
           >
             <Plus className="size-3.5 stroke-[3]" />
             <span>Invoice</span>
@@ -293,6 +292,21 @@ export function PosDashboardHeader({
           >
             <SearchIcon className="size-3.5" />
           </Button>
+
+          {/* Real-time Team Chat Trigger */}
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('artyx-open-chat'))
+              }
+            }}
+            className="size-8.5 rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted/60 active:scale-95 flex items-center justify-center shadow-2xs transition-all shrink-0 cursor-pointer"
+            title="Real-time Team Chat (Socket.io)"
+            aria-label="Real-time Team Chat"
+          >
+            <MessageSquare className="size-3.5" />
+          </button>
 
           {/* Agency Notifications Feed */}
           <HeaderNotifications triggerClassName="size-8.5 rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted/60 active:scale-95 shadow-2xs data-[state=open]:bg-muted data-[state=open]:text-foreground transition-all" />

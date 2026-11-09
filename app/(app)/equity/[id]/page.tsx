@@ -70,7 +70,7 @@ export default async function PartnerDetailPage({
             <h1 className="text-2xl md:text-3xl font-extrabold text-foreground mt-1 tracking-tight">
               {owner.name}
             </h1>
-            <p className="text-xs text-[#3E7000] dark:text-[#7FFF00] font-medium">{owner.title}</p>
+            <p className="text-xs text-primary font-medium">{owner.title}</p>
           </div>
         </div>
 
@@ -139,10 +139,10 @@ export default async function PartnerDetailPage({
             <CardTitle className="text-xs font-semibold text-muted-foreground">
               Dividends Distributed
             </CardTitle>
-            <Coins className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />
+            <Coins className="size-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-mono text-[#3E7000] dark:text-[#7FFF00]">
+            <div className="text-2xl font-bold font-mono text-primary">
               ৳{distributed.toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground mt-1">

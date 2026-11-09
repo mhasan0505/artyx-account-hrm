@@ -334,7 +334,7 @@ export function CredentialsVaultClient({
           <Button
             size="sm"
             onClick={() => setAddModalOpen(true)}
-            className="bg-[#3E7000] hover:bg-[#346000] text-white dark:bg-[#7FFF00] dark:hover:bg-[#72e600] dark:text-black font-bold text-xs h-9 px-3.5 rounded-xl shadow-xs gap-1.5"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs h-9 px-3.5 rounded-xl shadow-xs gap-1.5"
           >
             <Plus className="size-3.5 stroke-[2.5]" />
             Add Credential
@@ -356,7 +356,7 @@ export function CredentialsVaultClient({
                 onClick={() => setSelectedCategory(tab.value)}
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap cursor-pointer ${
                   isActive
-                    ? 'bg-[#3E7000] text-white dark:bg-[#7FFF00] dark:text-black shadow-xs font-bold'
+                    ? 'bg-primary text-primary-foreground shadow-xs font-bold'
                     : 'bg-card text-muted-foreground hover:text-foreground border border-border/80 hover:bg-muted/60'
                 }`}
               >
@@ -391,7 +391,7 @@ export function CredentialsVaultClient({
             <Button
               size="sm"
               onClick={() => setAddModalOpen(true)}
-              className="bg-[#3E7000] hover:bg-[#346000] text-white dark:bg-[#7FFF00] dark:text-black font-semibold text-xs mt-2"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs mt-2"
             >
               <Plus className="size-3.5 mr-1" />
               Add First Credential
@@ -413,7 +413,7 @@ export function CredentialsVaultClient({
                   <div className="flex items-start justify-between gap-2">
                     <div className="space-y-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-muted text-[#3E7000] dark:text-[#7FFF00] border border-border">
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-muted text-primary border border-border">
                           {cred.client.clientCode}
                         </span>
                         <span className="text-xs font-semibold text-muted-foreground truncate max-w-[140px]">
@@ -421,7 +421,7 @@ export function CredentialsVaultClient({
                         </span>
                       </div>
                       <h3 className="text-sm font-extrabold text-foreground tracking-tight flex items-center gap-1.5">
-                        {isEnv && <Code2 className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />}
+                        {isEnv && <Code2 className="size-4 text-primary" />}
                         {cred.category === 'DOMAIN' && <Globe className="size-4 text-blue-500" />}
                         {cred.category === 'HOSTING' && <Server className="size-4 text-purple-500" />}
                         {cred.category === 'CMS_ADMIN' && <LayoutDashboard className="size-4 text-emerald-500" />}
@@ -456,7 +456,7 @@ export function CredentialsVaultClient({
                         href={cred.loginUrl.startsWith('http') ? cred.loginUrl : `https://${cred.loginUrl}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-between gap-1 px-2.5 py-1.5 rounded-lg bg-muted/40 border border-border text-[#3E7000] dark:text-[#7FFF00] hover:underline font-mono text-xs truncate"
+                        className="flex items-center justify-between gap-1 px-2.5 py-1.5 rounded-lg bg-muted/40 border border-border text-primary hover:underline font-mono text-xs truncate"
                       >
                         <span className="truncate">{cred.loginUrl}</span>
                         <ExternalLink className="size-3 shrink-0" />
@@ -572,7 +572,7 @@ export function CredentialsVaultClient({
                   {isEnv && (
                     <div className="space-y-2 pt-1 border-t border-border/70">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] text-[#3E7000] dark:text-[#7FFF00] font-mono font-bold uppercase flex items-center gap-1">
+                        <span className="text-[10px] text-primary font-mono font-bold uppercase flex items-center gap-1">
                           <Code2 className="size-3" />
                           Client .env Configuration ({envPairs.length} vars)
                         </span>
@@ -724,7 +724,7 @@ export function CredentialsVaultClient({
               <Button
                 type="submit"
                 disabled={verifying}
-                className="bg-[#3E7000] hover:bg-[#346000] text-white dark:bg-[#7FFF00] dark:hover:bg-[#72e600] dark:text-black font-bold text-xs rounded-xl shadow-xs"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs rounded-xl shadow-xs"
               >
                 {verifying ? 'Verifying...' : 'Unlock Vault'}
               </Button>
@@ -738,7 +738,7 @@ export function CredentialsVaultClient({
         <DialogContent className="max-w-xl bg-card border-border text-card-foreground shadow-2xl p-6 rounded-2xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-lg font-bold text-foreground">
-              <Shield className="size-5 text-[#3E7000] dark:text-[#7FFF00]" />
+              <Shield className="size-5 text-primary" />
               Store Client Credential & Secrets
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
@@ -799,7 +799,7 @@ export function CredentialsVaultClient({
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
                   <Label className="text-xs text-foreground font-medium flex items-center gap-1.5">
-                    <Code2 className="size-3.5 text-[#3E7000] dark:text-[#7FFF00]" />
+                    <Code2 className="size-3.5 text-primary" />
                     Raw .env Configuration Snippet
                   </Label>
                   <span className="text-[10px] text-muted-foreground font-mono">KEY=value format</span>
@@ -883,7 +883,7 @@ export function CredentialsVaultClient({
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="bg-[#3E7000] hover:bg-[#346000] text-white dark:bg-[#7FFF00] dark:hover:bg-[#72e600] dark:text-black font-bold text-xs rounded-xl shadow-xs"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs rounded-xl shadow-xs"
               >
                 {isSubmitting ? 'Saving...' : 'Save Credential'}
               </Button>

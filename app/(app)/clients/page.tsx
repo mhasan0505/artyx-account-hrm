@@ -37,7 +37,7 @@ export default async function ClientsPage({
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border pb-5">
         <div>
           <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-[#3E7000] dark:bg-[#7FFF00]" />
+            <span className="h-2 w-2 rounded-full bg-primary" />
             <h1 className="text-2xl md:text-3xl font-extrabold text-foreground tracking-tight">
               Agency Clients
             </h1>
@@ -69,7 +69,7 @@ export default async function ClientsPage({
         <Card className="bg-card border-border/80 text-card-foreground artyx-card rounded-2xl shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold text-muted-foreground">Total Clients</CardTitle>
-            <UsersRound className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />
+            <UsersRound className="size-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-mono text-foreground">{summary.totalClients}</div>
@@ -80,10 +80,10 @@ export default async function ClientsPage({
         <Card className="bg-card border-border/80 text-card-foreground artyx-card rounded-2xl shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold text-muted-foreground">Monthly Retainer MRR</CardTitle>
-            <CalendarCheck className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />
+            <CalendarCheck className="size-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-mono text-[#3E7000] dark:text-[#7FFF00]">
+            <div className="text-2xl font-bold font-mono text-primary">
               ৳{summary.activeRetainersMonthlyValue.toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
@@ -108,10 +108,10 @@ export default async function ClientsPage({
         <Card className="bg-card border-border/80 text-card-foreground artyx-card rounded-2xl shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold text-muted-foreground">Primary Currency</CardTitle>
-            <CreditCard className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />
+            <CreditCard className="size-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-mono text-[#3E7000] dark:text-[#7FFF00]">BDT (৳)</div>
+            <div className="text-2xl font-bold font-mono text-primary">BDT (৳)</div>
             <p className="text-xs text-muted-foreground mt-1">Agency billing in Bangladesh Taka</p>
           </CardContent>
         </Card>
@@ -153,7 +153,7 @@ export default async function ClientsPage({
             <option value="INACTIVE">Inactive</option>
           </select>
 
-          <Button type="submit" size="sm" className="bg-[#3E7000] hover:bg-[#346000] text-white dark:bg-[#7FFF00] dark:hover:bg-[#6ee600] dark:text-black font-semibold">
+          <Button type="submit" size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
             Filter
           </Button>
         </div>
@@ -243,7 +243,7 @@ export default async function ClientsPage({
                       </span>
                       <span
                         className={`text-sm font-bold font-mono ${
-                          due > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-[#3E7000] dark:text-[#7FFF00]'
+                          due > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-primary'
                         }`}
                       >
                         ৳{due.toLocaleString()}

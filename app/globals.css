@@ -23,6 +23,11 @@
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+
+  /* Fixed brand accents — always-lime, independent of light/dark theme */
+  --color-lime: var(--lime-primary);
+  --color-lime-glow: var(--lime-glow);
+
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -74,6 +79,20 @@
   --text-3xl: 1.625rem;  /* 26.00px — major card/panel headers */
   --text-4xl: 2rem;      /* 32.00px — page titles */
   --text-5xl: 2.5rem;    /* 40.00px — hero/dashboard headline, rare use */
+}
+
+@theme {
+  /* Shimmer sweep for loading skeletons (transform-only, 60fps) */
+  --animate-shimmer: artyx-shimmer 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+
+  @keyframes artyx-shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
 }
 
 :root {
@@ -1107,58 +1126,92 @@ body {
    ───────────────────────────────────────────────────────────── */
 
 :root {
+  /* ── Motion tokens — single source of truth for the whole app ── */
   --ease-mechanical: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-entrance: cubic-bezier(0.16, 1, 0.3, 1); /* decelerate into rest */
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);        /* accelerate away */
+  --ease-inout: cubic-bezier(0.4, 0, 0.2, 1);     /* moves between states */
+
+  --duration-instant: 120ms; /* hover / press feedback */
+  --duration-fast: 180ms;    /* micro-interactions */
+  --duration-base: 240ms;    /* UI transition: modal, drawer, tab */
+  --duration-slow: 360ms;    /* page / view transition */
+
+  /* Brand accents */
   --lime-primary: #7FFF00;
   --lime-glow: rgba(127, 255, 0, 0.28);
   --lime-border: rgba(127, 255, 0, 0.18);
 }
 
-/* 60fps mechanical interaction utilities */
-.artyx-card {
-  border: 1px solid var(--border);
-  background: var(--card);
-  transition: transform 220ms var(--ease-mechanical),
-              border-color 220ms var(--ease-mechanical),
-              box-shadow 220ms var(--ease-mechanical);
-  will-change: transform, box-shadow;
+@layer components {
+  /* 60fps mechanical interaction utilities */
+  .artyx-card {
+    border: 1px solid var(--border);
+    background: var(--card);
+    transition: transform var(--duration-base) var(--ease-mechanical),
+                border-color var(--duration-base) var(--ease-mechanical),
+                box-shadow var(--duration-base) var(--ease-mechanical);
+    will-change: transform, box-shadow;
+  }
+
+  .dark .artyx-card:hover {
+    border-color: rgba(127, 255, 0, 0.35);
+    box-shadow: 0 0 25px rgba(127, 255, 0, 0.08), 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  }
+
+  .artyx-glow-border {
+    position: relative;
+  }
+
+  .dark .artyx-glow-border::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(127, 255, 0, 0.4), transparent 60%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .artyx-btn-primary {
+    transition: all var(--duration-fast) var(--ease-mechanical);
+  }
+
+  .artyx-btn-primary:active {
+    transform: scale(0.97);
+  }
 }
 
-.dark .artyx-card:hover {
-  border-color: rgba(127, 255, 0, 0.35);
-  box-shadow: 0 0 25px rgba(127, 255, 0, 0.08), 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-}
-
-.artyx-glow-border {
-  position: relative;
-}
-
-.dark .artyx-glow-border::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(135deg, rgba(127, 255, 0, 0.4), transparent 60%);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
-
-.artyx-btn-primary {
-  transition: all 180ms var(--ease-mechanical);
-}
-
-.artyx-btn-primary:active {
-  transform: scale(0.97);
-}
-
+/*
+ * Accessibility — honour prefers-reduced-motion globally (motion-principles:
+ * non-negotiable). JS-driven motion (framer-motion / GSAP) is additionally
+ * gated with `useReducedMotion` in the components themselves, since CSS cannot
+ * reach inline transforms it animates on the main thread.
+ */
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
   .artyx-card,
   .artyx-btn-primary {
     transition: none !important;
     transform: none !important;
+  }
+
+  /* Never freeze a determinate spinner — a stuck spinner reads as "broken". */
+  .animate-spin {
+    animation-duration: 1s !important;
+    animation-iteration-count: infinite !important;
   }
 }
 

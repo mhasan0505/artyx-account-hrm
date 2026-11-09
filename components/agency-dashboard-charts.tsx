@@ -22,10 +22,6 @@ import {
   TrendingUp,
   BarChart3,
   PieChart as PieIcon,
-  Layers,
-  ArrowUpRight,
-  ShieldCheck,
-  Coins,
 } from 'lucide-react'
 
 export type MonthlyTrendData = {
@@ -84,9 +80,9 @@ export function AgencyDashboardCharts({
         <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 gap-3 border-b border-border/70">
           <div>
             <div className="flex items-center gap-2">
-              <span className="size-2 rounded-full bg-[#3E7000] dark:bg-[#7FFF00]" />
+              <span className="size-2 rounded-full bg-primary" />
               <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
-                <TrendingUp className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />
+                <TrendingUp className="size-4 text-primary" />
                 Financial Trajectory & Profitability
               </CardTitle>
             </div>
@@ -103,7 +99,7 @@ export function AgencyDashboardCharts({
               onClick={() => setChartType('area')}
               className={`h-7 px-2.5 text-xs font-semibold rounded-lg transition-all ${
                 chartType === 'area'
-                  ? 'bg-[#3E7000] text-white dark:bg-[#7FFF00] dark:text-black shadow-xs'
+                  ? 'bg-primary text-primary-foreground shadow-xs'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -117,7 +113,7 @@ export function AgencyDashboardCharts({
               onClick={() => setChartType('bar')}
               className={`h-7 px-2.5 text-xs font-semibold rounded-lg transition-all ${
                 chartType === 'bar'
-                  ? 'bg-[#3E7000] text-white dark:bg-[#7FFF00] dark:text-black shadow-xs'
+                  ? 'bg-primary text-primary-foreground shadow-xs'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -172,7 +168,7 @@ export function AgencyDashboardCharts({
                             <p className="font-bold text-foreground border-b border-border pb-1 font-mono">{label} Telemetry</p>
                             <div className="flex justify-between items-center text-muted-foreground">
                               <span className="flex items-center gap-1.5">
-                                <span className="size-2 rounded-full bg-[#3E7000] dark:bg-[#7FFF00]" />
+                                <span className="size-2 rounded-full bg-primary" />
                                 Revenue:
                               </span>
                               <span className="font-mono font-bold text-foreground">৳{rev.toLocaleString()}</span>
@@ -205,7 +201,7 @@ export function AgencyDashboardCharts({
                     fillOpacity={1}
                     fill="url(#artyxLimeGrad)"
                     name="Invoiced Revenue"
-                    className="dark:stroke-[#7FFF00]"
+                    className="dark:stroke-lime"
                   />
                   <Area
                     type="monotone"
@@ -250,8 +246,8 @@ export function AgencyDashboardCharts({
                         return (
                           <div className="bg-popover border border-border shadow-xl rounded-xl p-3 text-xs space-y-1 min-w-44">
                             <p className="font-bold text-foreground border-b border-border pb-1 font-mono">{label} Comparison</p>
-                            {payload.map((p: any) => (
-                              <div key={p.dataKey} className="flex justify-between items-center py-0.5">
+                            {payload.map((p, i) => (
+                              <div key={`${p.dataKey ?? i}`} className="flex justify-between items-center py-0.5">
                                 <span className="flex items-center gap-1.5 text-muted-foreground capitalize">
                                   <span className="size-2 rounded-full" style={{ backgroundColor: p.color }} />
                                   {p.name}:
@@ -265,7 +261,7 @@ export function AgencyDashboardCharts({
                       return null
                     }}
                   />
-                  <Bar dataKey="revenue" name="Revenue" fill="#3E7000" radius={[6, 6, 0, 0]} className="dark:fill-[#7FFF00]" />
+                  <Bar dataKey="revenue" name="Revenue" fill="#3E7000" radius={[6, 6, 0, 0]} className="dark:fill-lime" />
                   <Bar dataKey="profit" name="Net Profit" fill="#10B981" radius={[6, 6, 0, 0]} />
                   <Bar dataKey="expenses" name="Overhead" fill="#F43F5E" radius={[6, 6, 0, 0]} />
                 </BarChart>
@@ -285,7 +281,7 @@ export function AgencyDashboardCharts({
             </div>
             <div className="p-2 rounded-xl bg-muted/40">
               <span className="text-[10px] text-muted-foreground font-mono uppercase block">Profit Margin</span>
-              <span className="text-xs font-bold text-[#3E7000] dark:text-[#7FFF00] font-mono">{profitMarginPct}%</span>
+              <span className="text-xs font-bold text-primary font-mono">{profitMarginPct}%</span>
             </div>
           </div>
         </CardContent>
@@ -296,7 +292,7 @@ export function AgencyDashboardCharts({
         <CardHeader className="pb-2 border-b border-border/70">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
-              <PieIcon className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />
+              <PieIcon className="size-4 text-primary" />
               Revenue by Service
             </CardTitle>
             <Badge variant="outline" className="text-[10px] font-mono font-bold border-border text-muted-foreground">

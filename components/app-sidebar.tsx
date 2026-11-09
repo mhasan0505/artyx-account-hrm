@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -80,8 +80,8 @@ function CollapsedRouteTooltip({
       >
         {isActive ? (
           <span className="relative flex size-1.5 shrink-0">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#3E7000] dark:bg-[#7FFF00] opacity-75" />
-            <span className="relative inline-flex size-1.5 rounded-full bg-[#3E7000] dark:bg-[#7FFF00]" />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+            <span className="relative inline-flex size-1.5 rounded-full bg-primary" />
           </span>
         ) : (
           <span className="size-1.5 shrink-0 rounded-full bg-muted-foreground/40" />
@@ -116,7 +116,7 @@ function NavItemLink({
         'group-data-[collapsible=icon]:size-10 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:mx-auto',
         'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50',
         isActive
-          ? 'text-[#3E7000] dark:text-[#7FFF00] font-bold'
+          ? 'text-primary font-bold'
           : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
       )}
     >
@@ -124,10 +124,10 @@ function NavItemLink({
       {isActive && (
         <motion.div
           layoutId="sidebar-active-indicator"
-          className="absolute inset-0 bg-[#3E7000]/10 dark:bg-[#7FFF00]/10 border border-[#3E7000]/25 dark:border-[#7FFF00]/30 rounded-xl -z-10 shadow-2xs"
+          className="absolute inset-0 bg-primary/10 border border-primary/25 dark:border-lime/30 rounded-xl -z-10 shadow-2xs"
           transition={{ type: 'spring', stiffness: 400, damping: 30 }}
         >
-          <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-[#3E7000] dark:bg-[#7FFF00] shadow-[0_0_8px_rgba(127,255,0,0.5)]" />
+          <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-primary shadow-[0_0_8px_rgba(127,255,0,0.5)]" />
         </motion.div>
       )}
 
@@ -144,7 +144,7 @@ function NavItemLink({
         className={cn(
           'size-4 shrink-0 flex items-center justify-center [&_svg]:size-4 transition-transform duration-200 group-hover/link:scale-110',
           isActive
-            ? 'text-[#3E7000] dark:text-[#7FFF00]'
+            ? 'text-primary'
             : 'text-muted-foreground group-hover/link:text-foreground'
         )}
       >
@@ -156,7 +156,7 @@ function NavItemLink({
       </span>
 
       {item.isPrimary && (
-        <span className="rounded-md bg-[#3E7000]/10 text-[#3E7000] dark:bg-[#7FFF00]/15 dark:text-[#7FFF00] border border-[#3E7000]/25 dark:border-[#7FFF00]/30 px-1.5 py-0.5 text-[9px] font-bold tracking-wider group-data-[collapsible=icon]:hidden">
+        <span className="rounded-md bg-primary/10 text-primary dark:bg-lime/15 dark:text-lime border border-primary/25 dark:border-lime/30 px-1.5 py-0.5 text-[9px] font-bold tracking-wider group-data-[collapsible=icon]:hidden">
           NEW
         </span>
       )}
@@ -212,13 +212,13 @@ function NavDropdownItem({
             <span
               className={cn(
                 'size-4 shrink-0 flex items-center justify-center [&_svg]:size-4',
-                hasActiveChild ? 'text-[#3E7000] dark:text-[#7FFF00]' : 'text-muted-foreground'
+                hasActiveChild ? 'text-primary' : 'text-muted-foreground'
               )}
             >
               {item.icon}
             </span>
             {hasActiveChild && (
-              <span className="absolute right-2 top-2 size-1.5 rounded-full bg-[#3E7000] dark:bg-[#7FFF00]" />
+              <span className="absolute right-2 top-2 size-1.5 rounded-full bg-primary" />
             )}
           </button>
         </DropdownMenuTrigger>
@@ -258,7 +258,7 @@ function NavDropdownItem({
                   >
                     <span className="truncate">{sub.title}</span>
                     {isSubActive && (
-                      <span className="size-1.5 rounded-full bg-[#3E7000] dark:bg-[#7FFF00]" />
+                      <span className="size-1.5 rounded-full bg-primary" />
                     )}
                   </Link>
                 </DropdownMenuItem>
@@ -282,7 +282,7 @@ function NavDropdownItem({
         className={cn(
           'group/btn relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200 ease-out cursor-pointer active:scale-[0.98]',
           hasActiveChild
-            ? 'text-[#3E7000] dark:text-[#7FFF00] font-bold'
+            ? 'text-primary font-bold'
             : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
         )}
       >
@@ -296,7 +296,7 @@ function NavDropdownItem({
         <span
           className={cn(
             'size-4 shrink-0 flex items-center justify-center [&_svg]:size-4 transition-transform duration-200 group-hover/btn:scale-110',
-            hasActiveChild ? 'text-[#3E7000] dark:text-[#7FFF00]' : 'text-muted-foreground group-hover/btn:text-foreground'
+            hasActiveChild ? 'text-primary' : 'text-muted-foreground group-hover/btn:text-foreground'
           )}
         >
           {item.icon}
@@ -341,7 +341,7 @@ function NavDropdownItem({
                     <span
                       className={cn(
                         'size-1.5 rounded-full shrink-0 transition-all duration-150',
-                        isSubActive ? 'bg-[#3E7000] dark:bg-[#7FFF00] ring-2 ring-primary/30' : 'bg-muted-foreground/40'
+                        isSubActive ? 'bg-primary ring-2 ring-primary/30' : 'bg-muted-foreground/40'
                       )}
                     />
                     <span className="truncate">{sub.title}</span>
@@ -602,7 +602,7 @@ export function AppSidebar({
         <SidebarFooter className="border-t border-sidebar-border p-3 group-data-[collapsible=icon]:p-2 bg-sidebar shrink-0 transition-colors">
           <div className="rounded-lg border border-border bg-muted/40 px-2.5 py-1.5 text-[11px] leading-tight text-muted-foreground group-data-[collapsible=icon]:hidden flex items-center justify-between transition-opacity duration-200">
             <span className="font-medium text-muted-foreground">Artyx Office</span>
-            <span className="font-bold text-[#3E7000] dark:text-[#7FFF00]">
+            <span className="font-bold text-primary">
               <a
                 href="https://www.artyx.digital"
                 target="_blank"
@@ -618,8 +618,8 @@ export function AppSidebar({
           <div className="hidden items-center justify-center group-data-[collapsible=icon]:flex">
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
-                <span className="flex size-8 items-center justify-center rounded-lg border border-[#7FFF00]/30 bg-[#121810] cursor-help">
-                  <span className="size-1.5 rounded-full bg-[#7FFF00]" />
+                <span className="flex size-8 items-center justify-center rounded-lg border border-lime/30 bg-[#121810] cursor-help">
+                  <span className="size-1.5 rounded-full bg-lime" />
                 </span>
               </TooltipTrigger>
               <TooltipContent

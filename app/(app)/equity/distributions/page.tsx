@@ -101,7 +101,7 @@ export default async function DistributionsPage() {
                     </div>
                     <div>
                       <span className="text-muted-foreground uppercase text-[10px] font-medium block">Total Distributed</span>
-                      <span className="font-mono font-bold text-[#3E7000] dark:text-[#7FFF00]">
+                      <span className="font-mono font-bold text-primary">
                         ৳{Number(batch.distributableProfit).toLocaleString()}
                       </span>
                     </div>

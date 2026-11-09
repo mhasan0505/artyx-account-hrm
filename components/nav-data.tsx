@@ -27,6 +27,8 @@ import {
   UserCog,
   Users,
   UsersRound,
+  ListChecks,
+  MessageSquare,
 } from 'lucide-react'
 import * as React from 'react'
 
@@ -76,6 +78,17 @@ export const navData: NavSection[] = [
         title: 'Projects & Contracts',
         icon: <Briefcase className="size-4 shrink-0 text-cyan-400" />,
         url: '/projects',
+      },
+      {
+        title: 'My Tasks',
+        icon: <ListChecks className="size-4 shrink-0 text-violet-400" />,
+        url: '/projects/my-tasks',
+      },
+      {
+        title: 'Team Chat',
+        icon: <MessageSquare className="size-4 shrink-0 text-emerald-400" />,
+        url: '/team/chat',
+        isPrimary: true,
       },
       {
         title: 'Monthly Retainers',

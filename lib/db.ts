@@ -173,7 +173,12 @@ export async function withDatabaseReadFallback<T>(
 // Always cache the singleton in the global — even in production.
 // Without this, every module import on Vercel serverless creates a new Pool,
 // exhausting Neon connection limits and causing runtime crashes on all pages.
-if (!globalForPrisma.prisma) {
+// Also ensure any newly added models (e.g. projectTask) force a refresh if missing from cached global.
+if (
+  !globalForPrisma.prisma ||
+  !('projectTask' in (globalForPrisma.prisma as unknown as Record<string, unknown>)) ||
+  !('teamChatMessage' in (globalForPrisma.prisma as unknown as Record<string, unknown>))
+) {
   globalForPrisma.prisma = createPrismaClient()
 }
 

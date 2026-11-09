@@ -86,7 +86,7 @@ export function RecordPaymentModal({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger || (
-          <Button size="sm" className="bg-[#3E7000] hover:bg-[#346000] text-white dark:bg-[#7FFF00] dark:hover:bg-[#6ee600] dark:text-black font-semibold shadow-xs">
+          <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs">
             <DollarSign className="size-3.5 mr-1" />
             Record Payment
           </Button>
@@ -95,7 +95,7 @@ export function RecordPaymentModal({
       <DialogContent className="max-w-md bg-card border-border text-card-foreground shadow-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg font-bold text-foreground">
-            <CreditCard className="size-5 text-[#3E7000] dark:text-[#7FFF00]" />
+            <CreditCard className="size-5 text-primary" />
             Record Invoice Payment
           </DialogTitle>
         </DialogHeader>
@@ -111,7 +111,7 @@ export function RecordPaymentModal({
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Current Due:</span>
-            <span className="font-bold text-[#3E7000] dark:text-[#7FFF00]">৳{dueAmount.toLocaleString()}</span>
+            <span className="font-bold text-primary">৳{dueAmount.toLocaleString()}</span>
           </div>
         </div>
 
@@ -206,7 +206,7 @@ export function RecordPaymentModal({
             <Button
               type="submit"
               disabled={loading}
-              className="bg-[#3E7000] hover:bg-[#346000] text-white dark:bg-[#7FFF00] dark:hover:bg-[#6ee600] dark:text-black font-semibold shadow-xs"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs"
             >
               {loading ? 'Recording...' : 'Confirm Payment'}
             </Button>

@@ -139,7 +139,7 @@ export function AdvancesManagement({
 
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-[#3E7000] hover:bg-[#346000] text-white dark:bg-[#7FFF00] dark:hover:bg-[#6ee600] dark:text-black font-semibold shadow-xs">
+            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs">
               <Plus className="size-4 mr-1.5" />
               Disburse Salary Advance
             </Button>
@@ -147,7 +147,7 @@ export function AdvancesManagement({
           <DialogContent className="max-w-md bg-card border-border text-card-foreground shadow-2xl">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-lg font-bold text-foreground">
-                <Coins className="size-5 text-[#3E7000] dark:text-[#7FFF00]" />
+                <Coins className="size-5 text-primary" />
                 Issue Employee Advance Payment
               </DialogTitle>
             </DialogHeader>
@@ -245,7 +245,7 @@ export function AdvancesManagement({
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="bg-[#3E7000] hover:bg-[#346000] text-white dark:bg-[#7FFF00] dark:hover:bg-[#6ee600] dark:text-black font-semibold shadow-xs"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs"
                 >
                   {loading ? 'Disbursing...' : 'Disburse Advance'}
                 </Button>

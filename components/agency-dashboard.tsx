@@ -2,7 +2,8 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
+import { listItem, resolveMotion, staggerContainer } from '@/lib/motion'
 import {
   AgencyDashboardCharts,
   type MonthlyTrendData,
@@ -14,23 +15,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
-  ArrowUpRight,
-  BarChart2,
-  Briefcase,
   Building2,
   CalendarCheck,
   CheckCircle2,
   Coins,
-  CreditCard,
-  FileText,
-  KeyRound,
-  Layers,
-  PieChart,
-  Plus,
   Receipt,
   Scale,
-  Shield,
-  Sparkles,
   TrendingUp,
   Users,
   UsersRound,
@@ -91,21 +81,19 @@ type DashboardStats = {
 const PARTNER_COLORS = ['#7FFF00', '#06B6D4', '#8B5CF6', '#F59E0B', '#10B981']
 
 export function AgencyDashboard({ stats }: { stats: DashboardStats }) {
-  // Container stagger variant
-  const containerVariants: any = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.06,
-      },
-    },
-  }
+  const reduce = useReducedMotion()
 
-  const itemVariants: any = {
-    hidden: { opacity: 0, y: 12 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.28, ease: 'easeOut' } },
-  }
+  const containerVariants = React.useMemo(
+    () => resolveMotion(staggerContainer(0.06), reduce),
+    [reduce]
+  )
+  const itemVariants = React.useMemo(
+    () => resolveMotion(listItem(12), reduce),
+    [reduce]
+  )
+
+  // Cards lift on hover, but never under reduced-motion.
+  const hoverLift = reduce ? undefined : { y: -3, transition: { duration: 0.18 } }
 
   return (
     <motion.div
@@ -117,19 +105,19 @@ export function AgencyDashboard({ stats }: { stats: DashboardStats }) {
       {/* 1. TOP WELCOME & AGENCY TELEMETRY HERO WITH INTERACTIVE CANVAS */}
       <motion.div
         variants={itemVariants}
-        className="relative flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 bg-[#080E06] dark:bg-[#060B05] text-white p-6 sm:p-8 rounded-3xl border border-[#3E7000]/40 dark:border-[#7FFF00]/30 shadow-2xl overflow-hidden group"
+        className="relative flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 bg-[#080E06] dark:bg-[#060B05] text-white p-6 sm:p-8 rounded-3xl border border-primary/40 dark:border-lime/30 shadow-2xl overflow-hidden group"
       >
         {/* Interactive 60fps Particle Mesh Canvas */}
         <AgencyHeroCanvas />
 
         {/* Ambient Glow Orbs */}
-        <div className="absolute top-0 right-0 w-96 h-48 bg-[#7FFF00]/10 blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-0 w-96 h-48 bg-lime/10 blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/3 w-64 h-32 bg-[#06B6D4]/10 blur-3xl pointer-events-none" />
 
         <div className="space-y-2 relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#7FFF00]/10 border border-[#7FFF00]/30 backdrop-blur-md">
-            <span className="size-2 rounded-full bg-[#7FFF00] animate-pulse" />
-            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#7FFF00]">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-lime/10 border border-lime/30 backdrop-blur-md">
+            <span className="size-2 rounded-full bg-lime animate-pulse" />
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-lime">
               Artyx Digital · Operating Intelligence
             </span>
           </div>
@@ -151,7 +139,7 @@ export function AgencyDashboard({ stats }: { stats: DashboardStats }) {
               <span>Fiscal Year: <strong>2026</strong></span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="size-1.5 rounded-full bg-[#7FFF00]" />
+              <span className="size-1.5 rounded-full bg-lime" />
               <span>Collection Rate: <strong>{stats.collectionEfficiencyPct}%</strong></span>
             </div>
           </div>
@@ -165,12 +153,12 @@ export function AgencyDashboard({ stats }: { stats: DashboardStats }) {
               variant="outline"
               className="border-slate-700 bg-slate-900/60 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold h-10 px-4 active:scale-95 transition-all shadow-xs"
             >
-              <Receipt className="size-4 mr-1.5 text-[#7FFF00]" />
+              <Receipt className="size-4 mr-1.5 text-lime" />
               New Invoice
             </Button>
           </Link>
           <Link href="/equity/distributions">
-            <Button className="bg-[#7FFF00] hover:bg-[#72e600] text-black font-extrabold rounded-xl text-xs h-10 px-4 active:scale-95 transition-all shadow-md">
+            <Button className="bg-lime hover:bg-lime/90 text-black font-extrabold rounded-xl text-xs h-10 px-4 active:scale-95 transition-all shadow-md">
               <Coins className="size-4 mr-1.5" />
               Distribute Profit
             </Button>
@@ -181,19 +169,19 @@ export function AgencyDashboard({ stats }: { stats: DashboardStats }) {
       {/* 2. PRIMARY EXECUTIVE KPI METRICS GRID */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1: MRR */}
-        <motion.div whileHover={{ y: -3, transition: { duration: 0.18 } }}>
+        <motion.div whileHover={hoverLift}>
           <Card className="bg-card border-border/80 text-card-foreground artyx-card rounded-2xl shadow-xs relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#3E7000] to-[#7FFF00]" />
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-lime" />
             <CardHeader className="flex flex-row items-center justify-between pb-2 pt-5">
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-mono">
                 Monthly Recurring (MRR)
               </CardTitle>
-              <div className="size-8 rounded-xl bg-[#3E7000]/10 dark:bg-[#7FFF00]/10 flex items-center justify-center">
-                <CalendarCheck className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />
+              <div className="size-8 rounded-xl bg-primary/10 flex items-center justify-center">
+                <CalendarCheck className="size-4 text-primary" />
               </div>
             </CardHeader>
             <CardContent className="space-y-1">
-              <div className="text-2xl lg:text-3xl font-black font-mono tracking-tight text-[#3E7000] dark:text-[#7FFF00]">
+              <div className="text-2xl lg:text-3xl font-black font-mono tracking-tight text-primary">
                 ৳{stats.monthlyMRR.toLocaleString()}
               </div>
               <div className="flex items-center justify-between pt-1">
@@ -209,7 +197,7 @@ export function AgencyDashboard({ stats }: { stats: DashboardStats }) {
         </motion.div>
 
         {/* KPI 2: Net Operating Profit */}
-        <motion.div whileHover={{ y: -3, transition: { duration: 0.18 } }}>
+        <motion.div whileHover={hoverLift}>
           <Card className="bg-card border-border/80 text-card-foreground artyx-card rounded-2xl shadow-xs relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-400" />
             <CardHeader className="flex flex-row items-center justify-between pb-2 pt-5">
@@ -232,7 +220,7 @@ export function AgencyDashboard({ stats }: { stats: DashboardStats }) {
               </div>
               <div className="flex items-center justify-between pt-1">
                 <p className="text-xs text-muted-foreground">After payroll & overhead</p>
-                <Badge variant="outline" className="text-[10px] font-mono font-bold text-[#3E7000] dark:text-[#7FFF00] border-[#3E7000]/30 dark:border-[#7FFF00]/30 bg-[#3E7000]/10 dark:bg-[#7FFF00]/10">
+                <Badge variant="outline" className="text-[10px] font-mono font-bold text-primary border-primary/30 bg-primary/10">
                   {stats.netOperatingMarginPct}% Margin
                 </Badge>
               </div>
@@ -241,7 +229,7 @@ export function AgencyDashboard({ stats }: { stats: DashboardStats }) {
         </motion.div>
 
         {/* KPI 3: Accounts Receivable Due */}
-        <motion.div whileHover={{ y: -3, transition: { duration: 0.18 } }}>
+        <motion.div whileHover={hoverLift}>
           <Card className="bg-card border-border/80 text-card-foreground artyx-card rounded-2xl shadow-xs relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-orange-400" />
             <CardHeader className="flex flex-row items-center justify-between pb-2 pt-5">
@@ -267,7 +255,7 @@ export function AgencyDashboard({ stats }: { stats: DashboardStats }) {
         </motion.div>
 
         {/* KPI 4: Partner Capital Pool */}
-        <motion.div whileHover={{ y: -3, transition: { duration: 0.18 } }}>
+        <motion.div whileHover={hoverLift}>
           <Card className="bg-card border-border/80 text-card-foreground artyx-card rounded-2xl shadow-xs relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 to-indigo-500" />
             <CardHeader className="flex flex-row items-center justify-between pb-2 pt-5">
@@ -300,8 +288,8 @@ export function AgencyDashboard({ stats }: { stats: DashboardStats }) {
             <span className="text-[10px] text-muted-foreground uppercase font-mono block">Client Directory</span>
             <span className="text-xl font-black font-mono text-foreground">{stats.totalClients} Active</span>
           </div>
-          <div className="size-9 rounded-xl bg-[#3E7000]/10 dark:bg-[#7FFF00]/10 flex items-center justify-center">
-            <UsersRound className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />
+          <div className="size-9 rounded-xl bg-primary/10 flex items-center justify-center">
+            <UsersRound className="size-4 text-primary" />
           </div>
         </div>
 
@@ -355,7 +343,7 @@ export function AgencyDashboard({ stats }: { stats: DashboardStats }) {
           <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-border gap-2">
             <div>
               <div className="flex items-center gap-2">
-                <Scale className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />
+                <Scale className="size-4 text-primary" />
                 <CardTitle className="text-sm font-bold text-foreground">
                   Partner Equity Split & Ownership Structure
                 </CardTitle>
@@ -366,7 +354,7 @@ export function AgencyDashboard({ stats }: { stats: DashboardStats }) {
             </div>
             <Link
               href="/equity"
-              className="text-xs font-mono font-bold text-[#3E7000] dark:text-[#7FFF00] hover:underline flex items-center gap-1 self-start sm:self-auto"
+              className="text-xs font-mono font-bold text-primary hover:underline flex items-center gap-1 self-start sm:self-auto"
             >
               Equity Ledger →
             </Link>
@@ -414,7 +402,7 @@ export function AgencyDashboard({ stats }: { stats: DashboardStats }) {
                   return (
                     <div
                       key={owner.id}
-                      className="p-3.5 rounded-xl bg-muted/40 dark:bg-[#121910] border border-border/80 space-y-2 hover:border-primary/40 transition-all"
+                      className="p-3.5 rounded-xl bg-muted/40 border border-border/80 space-y-2 hover:border-primary/40 transition-all"
                     >
                       <div className="flex justify-between items-start">
                         <div>
@@ -518,7 +506,7 @@ export function AgencyDashboard({ stats }: { stats: DashboardStats }) {
                     </div>
                     <div className="w-full bg-muted/80 rounded-full h-1.5 overflow-hidden">
                       <div
-                        className="bg-[#3E7000] dark:bg-[#7FFF00] h-full rounded-full transition-all duration-700"
+                        className="bg-primary h-full rounded-full transition-all duration-700"
                         style={{ width: `${project.progress}%` }}
                       />
                     </div>
@@ -535,7 +523,7 @@ export function AgencyDashboard({ stats }: { stats: DashboardStats }) {
             <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-border">
               <div>
                 <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
-                  <Receipt className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />
+                  <Receipt className="size-4 text-primary" />
                   Recent Service Invoices
                 </CardTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -565,7 +553,7 @@ export function AgencyDashboard({ stats }: { stats: DashboardStats }) {
                         <div className="flex items-center gap-2">
                           <Link
                             href={`/invoices/${inv.id}`}
-                            className="font-mono font-bold text-[#3E7000] dark:text-[#7FFF00] hover:underline"
+                            className="font-mono font-bold text-primary hover:underline"
                           >
                             {inv.invoiceNumber}
                           </Link>
@@ -614,7 +602,7 @@ export function AgencyDashboard({ stats }: { stats: DashboardStats }) {
       <motion.div variants={itemVariants} className="space-y-3">
         <div className="flex justify-between items-center">
           <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-            <UsersRound className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />
+            <UsersRound className="size-4 text-primary" />
             Client Directory Snapshot
           </h2>
           <Link href="/clients" className="text-xs text-primary hover:underline font-mono font-semibold">
@@ -630,7 +618,7 @@ export function AgencyDashboard({ stats }: { stats: DashboardStats }) {
             >
               <div className="flex justify-between items-start">
                 <div>
-                  <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-md bg-muted text-[#3E7000] dark:text-[#7FFF00] font-bold border border-border">
+                  <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-md bg-muted text-primary font-bold border border-border">
                     {c.clientCode}
                   </span>
                   <h3 className="font-bold text-foreground mt-1.5 text-sm truncate max-w-[170px]">

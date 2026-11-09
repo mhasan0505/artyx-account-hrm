@@ -101,7 +101,7 @@ export function CreateProjectModal({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger || (
-          <Button className="bg-[#3E7000] hover:bg-[#346000] text-white dark:bg-[#7FFF00] dark:hover:bg-[#6ee600] dark:text-black font-semibold shadow-xs">
+          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs">
             <Plus className="size-4 mr-1.5" />
             New Project
           </Button>
@@ -110,7 +110,7 @@ export function CreateProjectModal({
       <DialogContent className="max-w-lg bg-card border-border text-card-foreground shadow-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg font-bold text-foreground">
-            <Briefcase className="size-5 text-[#3E7000] dark:text-[#7FFF00]" />
+            <Briefcase className="size-5 text-primary" />
             Register Agency Project
           </DialogTitle>
         </DialogHeader>
@@ -229,7 +229,7 @@ export function CreateProjectModal({
             <Button
               type="submit"
               disabled={loading}
-              className="bg-[#3E7000] hover:bg-[#346000] text-white dark:bg-[#7FFF00] dark:hover:bg-[#6ee600] dark:text-black font-semibold shadow-xs"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs"
             >
               {loading ? 'Creating...' : 'Register Project'}
             </Button>

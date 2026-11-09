@@ -82,7 +82,7 @@ export default async function ClientDetailPage({
         <div className="flex flex-wrap items-center gap-2">
           <AddCredentialModal clientId={client.id} />
           <Link href={`/invoices/new?clientId=${client.id}`}>
-            <Button className="bg-[#3E7000] hover:bg-[#346000] text-white dark:bg-[#7FFF00] dark:hover:bg-[#6ee600] dark:text-black font-semibold shadow-xs">
+            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs">
               <Receipt className="size-4 mr-1.5" />
               Create Invoice
             </Button>
@@ -134,10 +134,10 @@ export default async function ClientDetailPage({
         <Card className="bg-card border-border/80 text-card-foreground artyx-card rounded-2xl shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold text-muted-foreground">Active Retainers & Projects</CardTitle>
-            <Building2 className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />
+            <Building2 className="size-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-mono text-[#3E7000] dark:text-[#7FFF00]">
+            <div className="text-2xl font-bold font-mono text-primary">
               {client.stats.activeProjectsCount} Prj / {client.stats.activeRetainersCount} Ret
             </div>
             <p className="text-xs text-muted-foreground mt-1">Ongoing active work</p>
@@ -148,22 +148,22 @@ export default async function ClientDetailPage({
       {/* Main Tabs Section */}
       <Tabs defaultValue="credentials" className="space-y-4">
         <TabsList className="bg-muted border border-border text-muted-foreground p-1 rounded-xl">
-          <TabsTrigger value="credentials" className="data-[state=active]:bg-card data-[state=active]:text-[#3E7000] dark:data-[state=active]:text-[#7FFF00] data-[state=active]:shadow-xs rounded-lg">
+          <TabsTrigger value="credentials" className="data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-xs rounded-lg">
             Credentials Vault ({client.credentials.length})
           </TabsTrigger>
-          <TabsTrigger value="invoices" className="data-[state=active]:bg-card data-[state=active]:text-[#3E7000] dark:data-[state=active]:text-[#7FFF00] data-[state=active]:shadow-xs rounded-lg">
+          <TabsTrigger value="invoices" className="data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-xs rounded-lg">
             Invoices & Billing ({client.invoices.length})
           </TabsTrigger>
-          <TabsTrigger value="projects" className="data-[state=active]:bg-card data-[state=active]:text-[#3E7000] dark:data-[state=active]:text-[#7FFF00] data-[state=active]:shadow-xs rounded-lg">
+          <TabsTrigger value="projects" className="data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-xs rounded-lg">
             Projects ({client.projects.length})
           </TabsTrigger>
-          <TabsTrigger value="retainers" className="data-[state=active]:bg-card data-[state=active]:text-[#3E7000] dark:data-[state=active]:text-[#7FFF00] data-[state=active]:shadow-xs rounded-lg">
+          <TabsTrigger value="retainers" className="data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-xs rounded-lg">
             Retainers ({client.retainers.length})
           </TabsTrigger>
-          <TabsTrigger value="ledger" className="data-[state=active]:bg-card data-[state=active]:text-[#3E7000] dark:data-[state=active]:text-[#7FFF00] data-[state=active]:shadow-xs rounded-lg">
+          <TabsTrigger value="ledger" className="data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-xs rounded-lg">
             Financial Ledger ({client.ledger.length})
           </TabsTrigger>
-          <TabsTrigger value="profile" className="data-[state=active]:bg-card data-[state=active]:text-[#3E7000] dark:data-[state=active]:text-[#7FFF00] data-[state=active]:shadow-xs rounded-lg">
+          <TabsTrigger value="profile" className="data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-xs rounded-lg">
             Contact & Brief
           </TabsTrigger>
         </TabsList>
@@ -213,7 +213,7 @@ export default async function ClientDetailPage({
                           href={cred.loginUrl.startsWith('http') ? cred.loginUrl : `https://${cred.loginUrl}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-[#3E7000] dark:text-[#7FFF00] hover:underline font-mono truncate"
+                          className="flex items-center gap-1 text-primary hover:underline font-mono truncate"
                         >
                           <span className="truncate">{cred.loginUrl}</span>
                           <ExternalLink className="size-3 shrink-0" />
@@ -261,7 +261,7 @@ export default async function ClientDetailPage({
           <div className="flex justify-between items-center">
             <h3 className="text-base font-semibold text-foreground">Invoices & Payment Records</h3>
             <Link href={`/invoices/new?clientId=${client.id}`}>
-              <Button size="sm" className="bg-[#3E7000] hover:bg-[#346000] text-white dark:bg-[#7FFF00] dark:hover:bg-[#6ee600] dark:text-black font-semibold shadow-xs">
+              <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs">
                 <Plus className="size-3.5 mr-1" />
                 New Invoice
               </Button>
@@ -378,7 +378,7 @@ export default async function ClientDetailPage({
                             {proj.projectCode}
                           </span>
                           <h4 className="text-base font-bold text-foreground mt-1">{proj.name}</h4>
-                          <p className="text-xs text-[#3E7000] dark:text-[#7FFF00] font-medium">{proj.serviceCategory}</p>
+                          <p className="text-xs text-primary font-medium">{proj.serviceCategory}</p>
                         </div>
                         <Badge variant="outline" className="text-xs border-border text-foreground">
                           {proj.status}

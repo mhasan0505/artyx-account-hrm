@@ -140,7 +140,7 @@ export function LeaveManagement({
 
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-[#3E7000] hover:bg-[#346000] text-white dark:bg-[#7FFF00] dark:hover:bg-[#6ee600] dark:text-black font-semibold shadow-xs">
+            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs">
               <Plus className="size-4 mr-1.5" />
               Request Leave
             </Button>
@@ -148,7 +148,7 @@ export function LeaveManagement({
           <DialogContent className="max-w-md bg-card border-border text-card-foreground shadow-2xl">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-lg font-bold text-foreground">
-                <Calendar className="size-5 text-[#3E7000] dark:text-[#7FFF00]" />
+                <Calendar className="size-5 text-primary" />
                 Submit Leave Application
               </DialogTitle>
             </DialogHeader>
@@ -236,7 +236,7 @@ export function LeaveManagement({
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="bg-[#3E7000] hover:bg-[#346000] text-white dark:bg-[#7FFF00] dark:hover:bg-[#6ee600] dark:text-black font-semibold shadow-xs"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs"
                 >
                   {loading ? 'Submitting...' : 'Submit Application'}
                 </Button>
@@ -277,7 +277,7 @@ export function LeaveManagement({
         <Card className="bg-card border-border/80 text-card-foreground artyx-card rounded-2xl shadow-xs">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-semibold text-muted-foreground">Available Leave Types</CardTitle>
-            <CheckSquare className="size-4 text-[#3E7000] dark:text-[#7FFF00]" />
+            <CheckSquare className="size-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-mono text-foreground">{leaveTypes.length}</div>
