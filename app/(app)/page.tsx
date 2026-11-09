@@ -2,9 +2,13 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/db'
 import { AgencyDashboard } from '@/components/agency-dashboard'
 import { getAgencyProfitAndLoss } from '@/lib/actions/agency-profit'
+import { redirect } from 'next/navigation'
 
 export default async function DashboardPage() {
   const session = await auth()
+  if (!session?.user) {
+    redirect('/login')
+  }
 
   // 1. Client & Retainer stats
   const [clientsCount, retainersAgg, projectsCount] = await Promise.all([

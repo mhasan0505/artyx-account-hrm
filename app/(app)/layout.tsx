@@ -1,4 +1,5 @@
 import { auth } from '@/auth'
+import { redirect } from 'next/navigation'
 import { AppSidebar } from '@/components/app-sidebar'
 import { PosDashboardHeader } from '@/components/pos-dashboard-header'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
@@ -14,6 +15,9 @@ export default async function AppLayout({
   children: React.ReactNode
 }) {
   const session = await auth()
+  if (!session?.user) {
+    redirect('/login')
+  }
   const posContext = getPosContext()
 
   const userName = session?.user?.name ?? posContext.userName

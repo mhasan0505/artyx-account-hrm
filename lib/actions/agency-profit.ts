@@ -6,7 +6,32 @@ import { prisma } from '@/lib/db'
 export async function getAgencyProfitAndLoss(startDate?: Date, endDate?: Date) {
   const session = await auth()
   if (!session?.user) {
-    throw new Error('Unauthorized')
+    return {
+      period: { start: new Date(), end: new Date() },
+      revenue: {
+        softwareDevelopment: 0,
+        digitalMarketing: 0,
+        otherServices: 0,
+        total: 0,
+      },
+      directCosts: {
+        contractorAndFreelance: 0,
+        clientAdSpendDisbursement: 0,
+        total: 0,
+      },
+      grossProfit: 0,
+      grossMarginPct: 0,
+      operatingExpenses: {
+        teamPayroll: 0,
+        saasAndCloudSubscriptions: 0,
+        officeRentAndUtilities: 0,
+        teamWelfareAndRefreshment: 0,
+        generalAdministrative: 0,
+        total: 0,
+      },
+      netProfit: 0,
+      netMarginPct: 0,
+    }
   }
 
   // Default to current calendar year if not specified
