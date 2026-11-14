@@ -14,6 +14,7 @@ const createUserSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   role: z.nativeEnum(UserRole),
+  customRoleId: z.string().optional().nullable(),
   outletId: z.string().cuid(),
 });
 
@@ -21,6 +22,7 @@ const updateUserSchema = z.object({
   id: z.string().cuid(),
   name: z.string().min(2).optional(),
   role: z.nativeEnum(UserRole).optional(),
+  customRoleId: z.string().optional().nullable(),
   isActive: z.coerce.boolean().optional(),
 });
 
@@ -66,10 +68,28 @@ export async function createUser(formData: FormData) {
     },
   });
 
+  if (parsed.data.customRoleId) {
+    try {
+      const setting = await prisma.setting.findUnique({
+        where: { key: "user_custom_roles_map" },
+      });
+      const map: Record<string, string> = setting?.value ? JSON.parse(setting.value) : {};
+      map[user.id] = parsed.data.customRoleId;
+      await prisma.setting.upsert({
+        where: { key: "user_custom_roles_map" },
+        update: { value: JSON.stringify(map) },
+        create: { key: "user_custom_roles_map", value: JSON.stringify(map) },
+      });
+    } catch (err) {
+      console.error("[createUser] Failed to save custom role mapping:", err);
+    }
+  }
+
   await logAudit("USER_CREATE", "User", user.id, {
     name: user.name,
     email: user.email,
     role: user.role,
+    customRoleId: parsed.data.customRoleId,
     outletId: user.outletId,
   });
 
@@ -83,7 +103,7 @@ export async function updateUser(formData: FormData) {
   const parsed = updateUserSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return fail(parsed.error.issues[0].message);
 
-  const { id, ...data } = parsed.data;
+  const { id, customRoleId, ...data } = parsed.data;
 
   const targetUser = await prisma.user.findUnique({
     where: { id },
@@ -102,9 +122,31 @@ export async function updateUser(formData: FormData) {
 
   const user = await prisma.user.update({ where: { id }, data });
 
+  if (customRoleId !== undefined) {
+    try {
+      const setting = await prisma.setting.findUnique({
+        where: { key: "user_custom_roles_map" },
+      });
+      const map: Record<string, string> = setting?.value ? JSON.parse(setting.value) : {};
+      if (customRoleId) {
+        map[user.id] = customRoleId;
+      } else {
+        delete map[user.id];
+      }
+      await prisma.setting.upsert({
+        where: { key: "user_custom_roles_map" },
+        update: { value: JSON.stringify(map) },
+        create: { key: "user_custom_roles_map", value: JSON.stringify(map) },
+      });
+    } catch (err) {
+      console.error("[updateUser] Failed to update custom role mapping:", err);
+    }
+  }
+
   await logAudit("USER_UPDATE", "User", user.id, {
     changedFields: Object.keys(data),
     targetRole: data.role,
+    customRoleId,
     isActive: data.isActive,
   });
 
@@ -165,6 +207,25 @@ export async function deleteUser(id: string) {
 
   await prisma.user.delete({ where: { id } });
 
+  try {
+    const setting = await prisma.setting.findUnique({
+      where: { key: "user_custom_roles_map" },
+    });
+    if (setting?.value) {
+      const map: Record<string, string> = JSON.parse(setting.value);
+      if (map[id]) {
+        delete map[id];
+        await prisma.setting.upsert({
+          where: { key: "user_custom_roles_map" },
+          update: { value: JSON.stringify(map) },
+          create: { key: "user_custom_roles_map", value: JSON.stringify(map) },
+        });
+      }
+    }
+  } catch (err) {
+    console.error("[deleteUser] Failed to cleanup custom role map:", err);
+  }
+
   await logAudit("USER_DELETE", "User", id, {
     targetUserRole: targetUser.role,
     targetUserOutletId: targetUser.outletId,
@@ -179,19 +240,48 @@ export async function getUsers() {
   const outletFilter =
     me.role === UserRole.SUPER_ADMIN ? {} : { outletId: me.outletId };
 
-  return prisma.user.findMany({
-    where: outletFilter,
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      isActive: true,
-      lastLogin: true,
-      createdAt: true,
-      outlet: { select: { id: true, name: true } },
-    },
-    orderBy: { createdAt: "desc" },
+  const [users, userRolesSetting, customRolesSetting] = await Promise.all([
+    prisma.user.findMany({
+      where: outletFilter,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        isActive: true,
+        lastLogin: true,
+        createdAt: true,
+        outlet: { select: { id: true, name: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.setting.findUnique({ where: { key: "user_custom_roles_map" } }),
+    prisma.setting.findUnique({ where: { key: "system_custom_roles" } }),
+  ]);
+
+  const userRolesMap: Record<string, string> = userRolesSetting?.value
+    ? JSON.parse(userRolesSetting.value)
+    : {};
+  const customRoles: Array<{ id: string; name: string; label: string; color?: string }> =
+    customRolesSetting?.value ? JSON.parse(customRolesSetting.value) : [];
+
+  return users.map((u) => {
+    const customRoleId = userRolesMap[u.id];
+    const customRole = customRoleId
+      ? customRoles.find((r) => r.id === customRoleId || r.name === customRoleId)
+      : null;
+
+    return {
+      ...u,
+      customRole: customRole
+        ? {
+            id: customRole.id,
+            name: customRole.name,
+            label: customRole.label,
+            color: customRole.color,
+          }
+        : null,
+    };
   });
 }
 

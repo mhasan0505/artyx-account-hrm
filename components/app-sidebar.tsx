@@ -366,7 +366,10 @@ export function AppSidebar({
   const isCollapsed = state === 'collapsed' && !isMobile
 
   const role = session?.user?.role ?? 'CASHIER'
-  const roleNavData = useMemo(() => getNavDataForRole(role), [role])
+  const roleNavData = useMemo(
+    () => getNavDataForRole(role, session?.user),
+    [role, session?.user]
+  )
 
   // Flatten accessible items with section titles
   const flatItems = useMemo(() => {

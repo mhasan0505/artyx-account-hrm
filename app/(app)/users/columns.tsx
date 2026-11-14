@@ -23,6 +23,12 @@ export type UserRow = {
   lastLogin: Date | null;
   createdAt: Date;
   outlet: { id: string; name: string };
+  customRole?: {
+    id: string;
+    name: string;
+    label: string;
+    color?: string;
+  } | null;
 };
 
 const ROLE_LABELS: Record<UserRole, string> = {
@@ -33,6 +39,20 @@ const ROLE_LABELS: Record<UserRole, string> = {
   TECHNICIAN: "Technician",
   ACCOUNTANT: "Accountant",
   HR: "HR",
+};
+
+const ROLE_COLOR_MAP: Record<string, string> = {
+  purple: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
+  blue: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+  indigo: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300",
+  green: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
+  emerald: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
+  orange: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
+  amber: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
+  pink: "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300",
+  rose: "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300",
+  cyan: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300",
+  slate: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
 };
 
 const ROLE_COLORS: Record<UserRole, string> = {
@@ -133,6 +153,24 @@ export function buildColumns(
       accessorKey: "role",
       header: "Role",
       cell: ({ row }) => {
+        const custom = row.original.customRole;
+        if (custom) {
+          const colorClass =
+            ROLE_COLOR_MAP[custom.color || "indigo"] ||
+            "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300";
+          return (
+            <div className="flex flex-col gap-0.5 items-start">
+              <span
+                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${colorClass}`}
+              >
+                {custom.label}
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                Base: {ROLE_LABELS[row.original.role]}
+              </span>
+            </div>
+          );
+        }
         const role = row.original.role;
         return (
           <span

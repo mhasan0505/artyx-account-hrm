@@ -27,6 +27,7 @@ import {
   UserCog,
   Users,
   UsersRound,
+  Wallet,
   ListChecks,
   MessageSquare,
 } from 'lucide-react'
@@ -184,6 +185,11 @@ export const navData: NavSection[] = [
         icon: <CreditCard className="size-4 shrink-0 text-orange-400" />,
         url: '/equity/drawings',
       },
+      {
+        title: 'CEO Money Management',
+        icon: <Wallet className="size-4 shrink-0 text-emerald-400" />,
+        url: '/money-management',
+      },
     ],
   },
   {
@@ -237,7 +243,7 @@ export const navData: NavSection[] = [
         url: '/master-setup/chart-of-accounts',
       },
       {
-        title: 'User Access',
+        title: 'Users & Roles',
         icon: <UserCog className="size-4 shrink-0 text-blue-400" />,
         url: '/users',
       },
@@ -250,13 +256,16 @@ export const navData: NavSection[] = [
   },
 ]
 
-export function getNavDataForRole(role: string): NavSection[] {
+export function getNavDataForRole(
+  role: string,
+  user?: { email?: string | null; role?: string | null; customRole?: string | null } | null
+): NavSection[] {
   return navData
     .map(section => {
       const items = section.items
         .map(item => {
           const filteredSubItems = item.subItems?.filter(subItem =>
-            canAccessRoute(role, subItem.url)
+            canAccessRoute(role, subItem.url, user)
           )
 
           if (item.subItems?.length) {
@@ -267,7 +276,7 @@ export function getNavDataForRole(role: string): NavSection[] {
             }
           }
 
-          if (!canAccessRoute(role, item.url)) return null
+          if (!canAccessRoute(role, item.url, user)) return null
           return item
         })
         .filter((item): item is NavItem => item !== null)

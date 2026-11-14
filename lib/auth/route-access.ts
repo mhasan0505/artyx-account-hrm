@@ -139,6 +139,10 @@ export const ROUTE_ACCESS: Array<{ prefix: string; roles: UserRoleString[] }> = 
     roles: ['SUPER_ADMIN', 'ADMIN'],
   },
   {
+    prefix: '/money-management',
+    roles: ['SUPER_ADMIN'],
+  },
+  {
     prefix: '/users',
     roles: ['SUPER_ADMIN', 'ADMIN'],
   },
@@ -167,12 +171,20 @@ export const ROUTE_ACCESS: Array<{ prefix: string; roles: UserRoleString[] }> = 
  */
 export function canAccessRoute(
   role: string | null | undefined,
-  pathname: string | null | undefined
+  pathname: string | null | undefined,
+  user?: { email?: string | null; role?: string | null; customRole?: string | null } | null
 ): boolean {
   if (!pathname || pathname === '#') return true
 
   // Strip query parameters and trailing slashes for clean matching
   const cleanPath = pathname.split('?')[0].split('#')[0].replace(/\/+$/, '') || '/'
+
+  // CEO exclusive route: strictly accessible only to CEO user
+  if (cleanPath === '/money-management' || cleanPath.startsWith('/money-management/')) {
+    const email = user?.email?.toLowerCase()
+    const customRole = user?.customRole?.toUpperCase()
+    return email === 'mhasan.coder@gmail.com' || customRole === 'CEO'
+  }
 
   // Pick the rule with the longest matching prefix explicitly (don't rely on array order)
   let bestRule: (typeof ROUTE_ACCESS)[number] | null = null
