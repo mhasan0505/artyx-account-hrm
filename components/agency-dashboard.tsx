@@ -3,30 +3,28 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { motion, useReducedMotion } from 'framer-motion'
-import { listItem, resolveMotion, staggerContainer } from '@/lib/motion'
 import {
-  AgencyDashboardCharts,
-  type MonthlyTrendData,
-  type CategoryStreamData,
-} from '@/components/agency-dashboard-charts'
-import { AgencyHeroCanvas } from '@/components/agency-hero-canvas'
-import { CreateClientModal } from '@/components/agency/client-modal'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import {
-  Building2,
-  CalendarCheck,
-  CheckCircle2,
-  Coins,
-  Receipt,
-  Scale,
-  TrendingUp,
-  Users,
-  UsersRound,
+  ArrowRight,
+  ArrowUpRight,
+  Plus,
 } from 'lucide-react'
+import { EASE, listItem, resolveMotion, staggerContainer } from '@/lib/motion'
+import { cn } from '@/lib/utils'
+import { CreateClientModal } from '@/components/agency/client-modal'
+import { AnimatedNumber } from '@/components/dashboard/animated-number'
+import {
+  FinancialHorizonChart,
+  type MonthlyTrendPoint,
+} from '@/components/dashboard/financial-horizon-chart'
+import {
+  CashAndVerticalsPanel,
+  PartnerEquityPanel,
+  type PartnerEquityItem,
+  type ServiceVerticalItem,
+} from '@/components/dashboard/analytics-panels'
 
-type DashboardStats = {
+export type AgencyDashboardStats = {
+  userName?: string
   totalClients: number
   monthlyMRR: number
   activeRetainers: number
@@ -34,15 +32,19 @@ type DashboardStats = {
   totalInvoiced: number
   totalCollected: number
   totalReceivableDue: number
+  overdueInvoicesCount?: number
+  totalExpenses: number
+  bankLiquidity?: number
   netOperatingProfit: number
   netOperatingMarginPct: number
   totalEquityAllocated: number
   partnerCapitalBalance: number
   totalTeamMembers: number
   collectionEfficiencyPct: number
-  trends: MonthlyTrendData[]
-  categories: CategoryStreamData[]
-  activeProjectsList?: Array<{
+  isTrendsProjected?: boolean
+  trends: MonthlyTrendPoint[]
+  categories: ServiceVerticalItem[]
+  activeProjectsList: Array<{
     id: string
     name: string
     projectCode: string
@@ -59,7 +61,7 @@ type DashboardStats = {
     totalAmount: number
     dueAmount: number
     status: string
-    issueDate: Date
+    issueDate: Date | string
   }>
   recentClients: Array<{
     id: string
@@ -69,582 +71,803 @@ type DashboardStats = {
     clientType: string
     dueAmount: number
   }>
-  owners: Array<{
-    id: string
-    name: string
-    title: string
-    equityPercentage: number
-    capitalBalance: number
-  }>
+  owners: PartnerEquityItem[]
 }
 
-const PARTNER_COLORS = ['#7FFF00', '#06B6D4', '#8B5CF6', '#F59E0B', '#10B981']
+type InvoiceFilter = 'all' | 'paid' | 'due'
 
-export function AgencyDashboard({ stats }: { stats: DashboardStats }) {
+const INVOICE_FILTERS: Array<{ id: InvoiceFilter; label: string }> = [
+  { id: 'all', label: 'All' },
+  { id: 'paid', label: 'Settled' },
+  { id: 'due', label: 'Pending' },
+]
+
+function MiniSparkline({
+  values,
+  positive = true,
+}: {
+  values: number[]
+  positive?: boolean
+}) {
   const reduce = useReducedMotion()
 
+  const path = React.useMemo(() => {
+    if (values.length < 2) return ''
+    const w = 88
+    const h = 28
+    const pad = 3
+    const min = Math.min(...values)
+    const max = Math.max(...values)
+    const range = max - min || 1
+    const points = values.map((v, i) => {
+      const x = pad + (i / (values.length - 1)) * (w - pad * 2)
+      const y = h - pad - ((v - min) / range) * (h - pad * 2)
+      return [x, y] as const
+    })
+
+    return points.reduce((acc, [x, y], idx) => {
+      if (idx === 0) return `M ${x.toFixed(1)} ${y.toFixed(1)}`
+      const [px, py] = points[idx - 1]
+      const cx = ((px + x) / 2).toFixed(1)
+      return `${acc} C ${cx} ${py.toFixed(1)}, ${cx} ${y.toFixed(1)}, ${x.toFixed(1)} ${y.toFixed(1)}`
+    }, '')
+  }, [values])
+
+  if (!path) return null
+
+  return (
+    <svg
+      viewBox="0 0 88 28"
+      className={cn(
+        'h-7 w-[88px] shrink-0 overflow-visible',
+        positive ? 'text-primary' : 'text-rose-500'
+      )}
+      aria-hidden="true"
+    >
+      <motion.path
+        d={path}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        initial={reduce ? false : { pathLength: 0, opacity: 0.2 }}
+        animate={{ pathLength: 1, opacity: 1 }}
+        transition={
+          reduce
+            ? { duration: 0 }
+            : { duration: 0.9, ease: EASE.entrance, delay: 0.15 }
+        }
+      />
+    </svg>
+  )
+}
+
+function getInvoiceStatusMeta(status: string, dueAmount: number) {
+  const normalized = status.toUpperCase()
+  if (normalized === 'PAID' || dueAmount <= 0) {
+    return {
+      label: 'Paid',
+      dot: 'bg-emerald-500',
+      text: 'text-emerald-600 dark:text-emerald-400',
+    }
+  }
+  if (normalized === 'OVERDUE') {
+    return {
+      label: 'Overdue',
+      dot: 'bg-rose-500',
+      text: 'text-rose-600 dark:text-rose-400',
+    }
+  }
+  if (normalized === 'PARTIAL' || normalized === 'PARTIALLY_PAID') {
+    return {
+      label: 'Partial',
+      dot: 'bg-amber-500',
+      text: 'text-amber-600 dark:text-amber-400',
+    }
+  }
+  return {
+    label: normalized === 'DRAFT' ? 'Draft' : 'Sent',
+    dot: 'bg-foreground/40',
+    text: 'text-muted-foreground',
+  }
+}
+
+function formatShortDate(date: Date | string): string {
+  const d = new Date(date)
+  if (Number.isNaN(d.getTime())) return '—'
+  return d.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
+export function AgencyDashboard({ stats }: { stats: AgencyDashboardStats }) {
+  const reduce = useReducedMotion()
+  const [invoiceFilter, setInvoiceFilter] = React.useState<InvoiceFilter>('all')
+
   const containerVariants = React.useMemo(
-    () => resolveMotion(staggerContainer(0.06), reduce),
+    () => resolveMotion(staggerContainer(0.055), reduce),
     [reduce]
   )
-  const itemVariants = React.useMemo(
-    () => resolveMotion(listItem(12), reduce),
+  const sectionVariants = React.useMemo(
+    () => resolveMotion(listItem(10), reduce),
     [reduce]
   )
 
-  // Cards lift on hover, but never under reduced-motion.
-  const hoverLift = reduce ? undefined : { y: -3, transition: { duration: 0.18 } }
+  const todayStamp = React.useMemo(() => {
+    const now = new Date()
+    return now
+      .toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      })
+      .toUpperCase()
+  }, [])
+
+  const firstName = React.useMemo(() => {
+    const raw = stats.userName?.trim()
+    if (!raw) return null
+    return raw.split(' ')[0]
+  }, [stats.userName])
+
+  const profitSparklineValues = React.useMemo(
+    () => stats.trends.map(t => t.profit),
+    [stats.trends]
+  )
+
+  const filteredInvoices = React.useMemo(() => {
+    const list = stats.recentInvoices
+    if (invoiceFilter === 'paid') {
+      return list.filter(inv => inv.status === 'PAID' || inv.dueAmount <= 0)
+    }
+    if (invoiceFilter === 'due') {
+      return list.filter(inv => inv.status !== 'PAID' && inv.dueAmount > 0)
+    }
+    return list
+  }, [stats.recentInvoices, invoiceFilter])
+
+  const totalRevenueDisplay =
+    stats.totalInvoiced > 0
+      ? stats.totalInvoiced
+      : stats.trends.reduce((s, t) => s + t.revenue, 0)
 
   return (
     <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="space-y-7 p-3 sm:p-6 md:p-8 w-full overflow-hidden"
+      className="mx-auto w-full max-w-[1440px] space-y-6 px-2 py-2 sm:px-5 sm:py-4 lg:px-6"
     >
-      {/* 1. TOP WELCOME & AGENCY TELEMETRY HERO WITH INTERACTIVE CANVAS */}
-      <motion.div
-        variants={itemVariants}
-        className="relative flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 bg-[#080E06] dark:bg-[#060B05] text-white p-6 sm:p-8 rounded-3xl border border-primary/40 dark:border-lime/30 shadow-2xl overflow-hidden group"
+      {/* 1. MINIMAL EDITORIAL HEADER BAR */}
+      <motion.header
+        variants={sectionVariants}
+        className="flex flex-col gap-4 border-b border-foreground/[0.08] pb-5 sm:flex-row sm:items-end sm:justify-between"
       >
-        {/* Interactive 60fps Particle Mesh Canvas */}
-        <AgencyHeroCanvas />
-
-        {/* Ambient Glow Orbs */}
-        <div className="absolute top-0 right-0 w-96 h-48 bg-lime/10 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/3 w-64 h-32 bg-[#06B6D4]/10 blur-3xl pointer-events-none" />
-
-        <div className="space-y-2 relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-lime/10 border border-lime/30 backdrop-blur-md">
-            <span className="size-2 rounded-full bg-lime animate-pulse" />
-            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-lime">
-              Artyx Digital · Operating Intelligence
+        <div className="space-y-1.5">
+          <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono tracking-wider text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5 text-foreground/80">
+              <span className="size-1.5 rounded-full bg-primary" />
+              ARTYX DIGITAL
             </span>
+            <span className="opacity-35">/</span>
+            <span>{todayStamp}</span>
+            <span className="opacity-35">/</span>
+            <span>BDT ৳</span>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight">
-            Agency Accounting & Financial Command
+          <h1 className="text-2xl font-semibold tracking-[-0.03em] text-foreground sm:text-[28px] leading-none">
+            {firstName ? `Executive Overview, ${firstName}` : 'Executive Overview'}
           </h1>
-          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-            Real-time telemetry for custom software engineering, performance marketing retainers, payroll distributions, and partner equity split in Bangladeshi Taka (৳).
-          </p>
-
-          <div className="flex flex-wrap items-center gap-4 pt-1 text-xs text-slate-400 font-mono">
-            <div className="flex items-center gap-1.5">
-              <span className="size-1.5 rounded-full bg-emerald-400" />
-              <span>Base Currency: <strong>BDT (৳)</strong></span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="size-1.5 rounded-full bg-cyan-400" />
-              <span>Fiscal Year: <strong>2026</strong></span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="size-1.5 rounded-full bg-lime" />
-              <span>Collection Rate: <strong>{stats.collectionEfficiencyPct}%</strong></span>
-            </div>
-          </div>
         </div>
 
-        {/* Quick Action Dock */}
-        <div className="flex flex-wrap items-center gap-2.5 relative z-10">
-          <CreateClientModal />
-          <Link href="/invoices/new">
-            <Button
-              variant="outline"
-              className="border-slate-700 bg-slate-900/60 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold h-10 px-4 active:scale-95 transition-all shadow-xs"
-            >
-              <Receipt className="size-4 mr-1.5 text-lime" />
-              New Invoice
-            </Button>
-          </Link>
-          <Link href="/equity/distributions">
-            <Button className="bg-lime hover:bg-lime/90 text-black font-extrabold rounded-xl text-xs h-10 px-4 active:scale-95 transition-all shadow-md">
-              <Coins className="size-4 mr-1.5" />
-              Distribute Profit
-            </Button>
-          </Link>
-        </div>
-      </motion.div>
-
-      {/* 2. PRIMARY EXECUTIVE KPI METRICS GRID */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* KPI 1: MRR */}
-        <motion.div whileHover={hoverLift}>
-          <Card className="bg-card border-border/80 text-card-foreground artyx-card rounded-2xl shadow-xs relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-lime" />
-            <CardHeader className="flex flex-row items-center justify-between pb-2 pt-5">
-              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-mono">
-                Monthly Recurring (MRR)
-              </CardTitle>
-              <div className="size-8 rounded-xl bg-primary/10 flex items-center justify-center">
-                <CalendarCheck className="size-4 text-primary" />
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-1">
-              <div className="text-2xl lg:text-3xl font-black font-mono tracking-tight text-primary">
-                ৳{stats.monthlyMRR.toLocaleString()}
-              </div>
-              <div className="flex items-center justify-between pt-1">
-                <p className="text-xs text-muted-foreground">
-                  {stats.activeRetainers} active retainers
-                </p>
-                <Badge variant="outline" className="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/10">
-                  +18.4% MoM
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* KPI 2: Net Operating Profit */}
-        <motion.div whileHover={hoverLift}>
-          <Card className="bg-card border-border/80 text-card-foreground artyx-card rounded-2xl shadow-xs relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-400" />
-            <CardHeader className="flex flex-row items-center justify-between pb-2 pt-5">
-              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-mono">
-                Net Operating Profit
-              </CardTitle>
-              <div className="size-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                <Coins className="size-4 text-emerald-600 dark:text-emerald-400" />
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-1">
-              <div
-                className={`text-2xl lg:text-3xl font-black font-mono tracking-tight ${
-                  stats.netOperatingProfit >= 0
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-rose-600 dark:text-rose-400'
-                }`}
+        {/* Clean Minimal Action Strip */}
+        <div className="flex flex-wrap items-center gap-2">
+          <CreateClientModal
+            trigger={
+              <button
+                type="button"
+                className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-xl border border-foreground/[0.1] bg-card px-3.5 text-xs font-medium text-foreground transition-all duration-150 hover:border-foreground/20 hover:bg-muted/60 active:scale-[0.98]"
               >
-                ৳{stats.netOperatingProfit.toLocaleString()}
-              </div>
-              <div className="flex items-center justify-between pt-1">
-                <p className="text-xs text-muted-foreground">After payroll & overhead</p>
-                <Badge variant="outline" className="text-[10px] font-mono font-bold text-primary border-primary/30 bg-primary/10">
-                  {stats.netOperatingMarginPct}% Margin
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* KPI 3: Accounts Receivable Due */}
-        <motion.div whileHover={hoverLift}>
-          <Card className="bg-card border-border/80 text-card-foreground artyx-card rounded-2xl shadow-xs relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-orange-400" />
-            <CardHeader className="flex flex-row items-center justify-between pb-2 pt-5">
-              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-mono">
-                Accounts Receivable
-              </CardTitle>
-              <div className="size-8 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                <TrendingUp className="size-4 text-amber-600 dark:text-amber-400" />
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-1">
-              <div className="text-2xl lg:text-3xl font-black font-mono tracking-tight text-amber-600 dark:text-amber-400">
-                ৳{stats.totalReceivableDue.toLocaleString()}
-              </div>
-              <div className="flex items-center justify-between pt-1">
-                <p className="text-xs text-muted-foreground">Pending client payments</p>
-                <Link href="/accounts-receivable" className="text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:underline font-mono">
-                  Ledger →
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* KPI 4: Partner Capital Pool */}
-        <motion.div whileHover={hoverLift}>
-          <Card className="bg-card border-border/80 text-card-foreground artyx-card rounded-2xl shadow-xs relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 to-indigo-500" />
-            <CardHeader className="flex flex-row items-center justify-between pb-2 pt-5">
-              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-mono">
-                Partner Capital Balance
-              </CardTitle>
-              <div className="size-8 rounded-xl bg-purple-500/10 flex items-center justify-center">
-                <Scale className="size-4 text-purple-600 dark:text-purple-400" />
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-1">
-              <div className="text-2xl lg:text-3xl font-black font-mono tracking-tight text-foreground">
-                ৳{stats.partnerCapitalBalance.toLocaleString()}
-              </div>
-              <div className="flex items-center justify-between pt-1">
-                <p className="text-xs text-muted-foreground">{stats.owners.length} active partners</p>
-                <span className="text-[11px] font-mono font-bold text-primary">
-                  {stats.totalEquityAllocated}% Split
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </motion.div>
-
-      {/* 3. SECONDARY TELEMETRY PULSE BAR */}
-      <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-card p-3.5 rounded-2xl border border-border flex items-center justify-between shadow-xs hover:border-primary/40 transition-colors">
-          <div>
-            <span className="text-[10px] text-muted-foreground uppercase font-mono block">Client Directory</span>
-            <span className="text-xl font-black font-mono text-foreground">{stats.totalClients} Active</span>
-          </div>
-          <div className="size-9 rounded-xl bg-primary/10 flex items-center justify-center">
-            <UsersRound className="size-4 text-primary" />
-          </div>
+                <Plus className="size-3.5 text-muted-foreground" />
+                <span>Client</span>
+              </button>
+            }
+          />
+          <Link
+            href="/invoices/new"
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-foreground/[0.1] bg-card px-3.5 text-xs font-medium text-foreground transition-all duration-150 hover:border-foreground/20 hover:bg-muted/60 active:scale-[0.98]"
+          >
+            <Plus className="size-3.5 text-muted-foreground" />
+            <span>Invoice</span>
+          </Link>
+          <Link
+            href="/equity/distributions"
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary px-4 text-xs font-semibold text-primary-foreground shadow-2xs transition-all duration-150 hover:brightness-105 active:scale-[0.98]"
+          >
+            <span>Distribute Profit</span>
+            <ArrowUpRight className="size-3.5" />
+          </Link>
         </div>
+      </motion.header>
 
-        <div className="bg-card p-3.5 rounded-2xl border border-border flex items-center justify-between shadow-xs hover:border-primary/40 transition-colors">
-          <div>
-            <span className="text-[10px] text-muted-foreground uppercase font-mono block">Active Projects</span>
-            <span className="text-xl font-black font-mono text-foreground">{stats.activeProjects} In Flight</span>
-          </div>
-          <div className="size-9 rounded-xl bg-purple-500/10 flex items-center justify-center">
-            <Building2 className="size-4 text-purple-600 dark:text-purple-400" />
-          </div>
-        </div>
-
-        <div className="bg-card p-3.5 rounded-2xl border border-border flex items-center justify-between shadow-xs hover:border-primary/40 transition-colors">
-          <div>
-            <span className="text-[10px] text-muted-foreground uppercase font-mono block">Total Cash Collected</span>
-            <span className="text-xl font-black font-mono text-emerald-600 dark:text-emerald-400">
-              ৳{stats.totalCollected.toLocaleString()}
-            </span>
-          </div>
-          <div className="size-9 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-            <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
-          </div>
-        </div>
-
-        <div className="bg-card p-3.5 rounded-2xl border border-border flex items-center justify-between shadow-xs hover:border-primary/40 transition-colors">
-          <div>
-            <span className="text-[10px] text-muted-foreground uppercase font-mono block">Engineering & Team</span>
-            <span className="text-xl font-black font-mono text-foreground">{stats.totalTeamMembers} Members</span>
-          </div>
-          <div className="size-9 rounded-xl bg-cyan-500/10 flex items-center justify-center">
-            <Users className="size-4 text-cyan-600 dark:text-cyan-400" />
-          </div>
-        </div>
-      </motion.div>
-
-      {/* 4. INTERACTIVE RECHARTS TELEMETRY (Area / Bar Trajectory & Service Stream Donut) */}
-      <motion.div variants={itemVariants}>
-        <AgencyDashboardCharts
-          trends={stats.trends}
-          categories={stats.categories}
-          totalRevenue={stats.totalInvoiced > 0 ? stats.totalInvoiced : 480000}
-          collectionEfficiencyPct={stats.collectionEfficiencyPct}
-          profitMarginPct={stats.netOperatingMarginPct}
-        />
-      </motion.div>
-
-      {/* 5. PARTNER EQUITY ALLOCATION & CAPITAL MANAGEMENT */}
-      <motion.div variants={itemVariants}>
-        <Card className="bg-card border-border/80 text-card-foreground artyx-card rounded-2xl shadow-xs overflow-hidden">
-          <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-border gap-2">
-            <div>
-              <div className="flex items-center gap-2">
-                <Scale className="size-4 text-primary" />
-                <CardTitle className="text-sm font-bold text-foreground">
-                  Partner Equity Split & Ownership Structure
-                </CardTitle>
-              </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Exact equity percentage breakdown and capital balance across Artyx Digital partners
-              </p>
+      {/* 2. SIGNATURE ARCHITECTURAL CENTERPIECE: LEDGER SUMMARY + FINANCIAL HORIZON */}
+      <motion.section
+        variants={sectionVariants}
+        className="grid grid-cols-1 overflow-hidden rounded-2xl border border-foreground/[0.08] bg-card xl:grid-cols-12"
+      >
+        {/* Left Rail (4 cols): Monumental Net Position + Hairline Executive Stack */}
+        <div className="flex flex-col justify-between border-b border-foreground/[0.08] xl:col-span-4 xl:border-b-0 xl:border-r">
+          {/* Primary Hero Anchor Metric */}
+          <div className="p-5 sm:p-6">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">
+                Net Operating Profit
+              </span>
+              <span
+                className={cn(
+                  'rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold tabular-nums',
+                  stats.netOperatingProfit >= 0
+                    ? 'bg-primary/12 text-primary'
+                    : 'bg-rose-500/12 text-rose-600 dark:text-rose-400'
+                )}
+              >
+                {stats.netOperatingMarginPct}% margin
+              </span>
             </div>
+
+            <div className="mt-3 flex items-end justify-between gap-3">
+              <AnimatedNumber
+                value={stats.netOperatingProfit}
+                prefix="৳"
+                className="text-3xl font-semibold tracking-[-0.04em] text-foreground sm:text-[36px] leading-none"
+                prefixClassName="text-xl sm:text-2xl font-normal text-muted-foreground"
+              />
+              <MiniSparkline
+                values={profitSparklineValues}
+                positive={stats.netOperatingProfit >= 0}
+              />
+            </div>
+
+            <p className="mt-2.5 text-xs text-muted-foreground">
+              After payroll, direct costs &amp; operating overhead
+            </p>
+          </div>
+
+          {/* Hairline-Divided Secondary Executive Metrics (No separate box clutter) */}
+          <div className="divide-y divide-foreground/[0.06] border-t border-foreground/[0.06]">
+            {/* Row 1: Monthly Recurring */}
+            <Link
+              href="/clients/retainers"
+              className="group flex items-center justify-between gap-4 px-5 py-3.5 transition-colors hover:bg-muted/35 sm:px-6"
+            >
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-muted-foreground">
+                  Monthly Recurring (MRR)
+                </p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground/75">
+                  {stats.activeRetainers} active retainer{stats.activeRetainers === 1 ? '' : 's'}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 text-right">
+                <AnimatedNumber
+                  value={stats.monthlyMRR}
+                  prefix="৳"
+                  className="font-mono text-sm font-semibold text-foreground"
+                />
+                <ArrowUpRight className="size-3.5 text-muted-foreground/50 transition-all duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-foreground" />
+              </div>
+            </Link>
+
+            {/* Row 2: Accounts Receivable + Micro Collection Bar */}
+            <Link
+              href="/accounts-receivable"
+              className="group block px-5 py-3.5 transition-colors hover:bg-muted/35 sm:px-6"
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Accounts Receivable
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground/75">
+                    {stats.overdueInvoicesCount && stats.overdueInvoicesCount > 0
+                      ? `${stats.overdueInvoicesCount} overdue · ${stats.collectionEfficiencyPct}% collected`
+                      : `${stats.collectionEfficiencyPct}% collection efficiency`}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 text-right">
+                  <AnimatedNumber
+                    value={stats.totalReceivableDue}
+                    prefix="৳"
+                    className={cn(
+                      'font-mono text-sm font-semibold',
+                      stats.totalReceivableDue > 0
+                        ? 'text-amber-600 dark:text-amber-400'
+                        : 'text-foreground'
+                    )}
+                  />
+                  <ArrowUpRight className="size-3.5 text-muted-foreground/50 transition-all duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-foreground" />
+                </div>
+              </div>
+              <div className="mt-2.5 h-1 w-full overflow-hidden rounded-full bg-foreground/[0.06]">
+                <motion.div
+                  initial={reduce ? false : { scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={
+                    reduce
+                      ? { duration: 0 }
+                      : { duration: 0.7, delay: 0.15, ease: EASE.entrance }
+                  }
+                  style={{
+                    width: `${Math.min(100, Math.max(4, stats.collectionEfficiencyPct))}%`,
+                    transformOrigin: 'left',
+                  }}
+                  className="h-full rounded-full bg-primary"
+                />
+              </div>
+            </Link>
+
+            {/* Row 3: Partner Capital Pool */}
             <Link
               href="/equity"
-              className="text-xs font-mono font-bold text-primary hover:underline flex items-center gap-1 self-start sm:self-auto"
+              className="group flex items-center justify-between gap-4 px-5 py-3.5 transition-colors hover:bg-muted/35 sm:px-6"
             >
-              Equity Ledger →
-            </Link>
-          </CardHeader>
-
-          <CardContent className="pt-4 space-y-5">
-            {/* 100% Segmented Equity Bar */}
-            <div className="space-y-1.5">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-muted-foreground font-medium">Ownership Distribution (100% Target)</span>
-                <span className="font-mono font-bold text-foreground">
-                  {stats.totalEquityAllocated}% Allocated
-                </span>
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-muted-foreground">
+                  Partner Capital Pool
+                </p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground/75">
+                  {stats.owners.length} partners · {stats.totalEquityAllocated}% allocated
+                </p>
               </div>
-              <div className="w-full bg-muted/60 h-3 rounded-full overflow-hidden flex shadow-inner">
-                {stats.owners.map((owner, idx) => {
-                  const color = PARTNER_COLORS[idx % PARTNER_COLORS.length]
+              <div className="flex items-center gap-2 text-right">
+                <AnimatedNumber
+                  value={stats.partnerCapitalBalance}
+                  prefix="৳"
+                  className="font-mono text-sm font-semibold text-foreground"
+                />
+                <ArrowUpRight className="size-3.5 text-muted-foreground/50 transition-all duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-foreground" />
+              </div>
+            </Link>
+
+            {/* Row 4: Treasury / Bank Liquidity (if tracked) or Collected Cash */}
+            <Link
+              href="/finances/banks"
+              className="group flex items-center justify-between gap-4 px-5 py-3.5 transition-colors hover:bg-muted/35 sm:px-6"
+            >
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-muted-foreground">
+                  {stats.bankLiquidity && stats.bankLiquidity > 0
+                    ? 'Bank & MFS Liquidity'
+                    : 'Total Cash Collected'}
+                </p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground/75">
+                  {stats.bankLiquidity && stats.bankLiquidity > 0
+                    ? `৳${stats.totalCollected.toLocaleString()} settled invoices`
+                    : 'Across all paid invoices'}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 text-right">
+                <AnimatedNumber
+                  value={
+                    stats.bankLiquidity && stats.bankLiquidity > 0
+                      ? stats.bankLiquidity
+                      : stats.totalCollected
+                  }
+                  prefix="৳"
+                  className="font-mono text-sm font-semibold text-foreground"
+                />
+                <ArrowUpRight className="size-3.5 text-muted-foreground/50 transition-all duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-foreground" />
+              </div>
+            </Link>
+          </div>
+
+          {/* Quiet Operational Telemetry Footer */}
+          <div className="grid grid-cols-3 divide-x divide-foreground/[0.06] border-t border-foreground/[0.06] bg-muted/20">
+            <Link
+              href="/clients"
+              className="px-4 py-3 text-center transition-colors hover:bg-muted/40"
+            >
+              <span className="block font-mono text-base font-semibold tabular-nums text-foreground">
+                {stats.totalClients}
+              </span>
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                Clients
+              </span>
+            </Link>
+            <Link
+              href="/projects"
+              className="px-4 py-3 text-center transition-colors hover:bg-muted/40"
+            >
+              <span className="block font-mono text-base font-semibold tabular-nums text-foreground">
+                {stats.activeProjects}
+              </span>
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                In Flight
+              </span>
+            </Link>
+            <Link
+              href="/hr/employees"
+              className="px-4 py-3 text-center transition-colors hover:bg-muted/40"
+            >
+              <span className="block font-mono text-base font-semibold tabular-nums text-foreground">
+                {stats.totalTeamMembers}
+              </span>
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                Team
+              </span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Right Canvas (8 cols): Interactive Financial Horizon Chart */}
+        <div className="xl:col-span-8">
+          <FinancialHorizonChart
+            trends={stats.trends}
+            totalRevenue={totalRevenueDisplay}
+            totalExpenses={stats.totalExpenses}
+            isProjected={stats.isTrendsProjected}
+          />
+        </div>
+      </motion.section>
+
+      {/* 3. ASYMMETRIC ANALYTICS BAND: CAPITAL VELOCITY + PARTNER EQUITY */}
+      <motion.section
+        variants={sectionVariants}
+        className="grid grid-cols-1 gap-6 lg:grid-cols-12"
+      >
+        <div className="lg:col-span-7">
+          <CashAndVerticalsPanel
+            totalInvoiced={totalRevenueDisplay}
+            totalCollected={stats.totalCollected}
+            totalReceivableDue={stats.totalReceivableDue}
+            totalExpenses={stats.totalExpenses}
+            collectionEfficiencyPct={stats.collectionEfficiencyPct}
+            profitMarginPct={stats.netOperatingMarginPct}
+            categories={stats.categories}
+          />
+        </div>
+
+        <div className="lg:col-span-5">
+          <PartnerEquityPanel
+            owners={stats.owners}
+            totalEquityAllocated={stats.totalEquityAllocated}
+            partnerCapitalBalance={stats.partnerCapitalBalance}
+          />
+        </div>
+      </motion.section>
+
+      {/* 4. OPERATIONS & SETTLEMENT BAND: PROJECTS (5 COLS) + INVOICES (7 COLS) */}
+      <motion.section
+        variants={sectionVariants}
+        className="grid grid-cols-1 gap-6 lg:grid-cols-12"
+      >
+        {/* Active Project Pipeline */}
+        <div className="flex flex-col justify-between rounded-2xl border border-foreground/[0.08] bg-card p-5 sm:p-6 lg:col-span-5">
+          <div>
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <h2 className="text-sm font-semibold tracking-tight text-foreground">
+                  Active Project Pipeline
+                </h2>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Milestone progress &amp; contract values
+                </p>
+              </div>
+              <Link
+                href="/projects"
+                className="group inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <span>All Projects</span>
+                <ArrowUpRight className="size-3 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </Link>
+            </div>
+
+            {stats.activeProjectsList.length === 0 ? (
+              <div className="mt-6 flex flex-col items-center justify-center rounded-xl border border-dashed border-foreground/12 py-12 text-center">
+                <p className="text-xs font-medium text-foreground">
+                  No active projects in flight
+                </p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Launch a client engagement to track milestones here.
+                </p>
+                <Link
+                  href="/projects"
+                  className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                >
+                  Open Projects Workspace <ArrowRight className="size-3" />
+                </Link>
+              </div>
+            ) : (
+              <div className="mt-5 divide-y divide-foreground/[0.06]">
+                {stats.activeProjectsList.map((project, idx) => (
+                  <Link
+                    key={project.id}
+                    href={`/projects/${project.id}`}
+                    className="group block py-3.5 first:pt-0 last:pb-0 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className="truncate text-xs font-semibold text-foreground transition-colors group-hover:text-primary">
+                            {project.name}
+                          </h3>
+                        </div>
+                        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                          {project.clientName} · {project.serviceCategory}
+                        </p>
+                      </div>
+                      <span className="shrink-0 font-mono text-xs font-semibold tabular-nums text-foreground">
+                        ৳{project.budget.toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="mt-2.5 flex items-center gap-3">
+                      <div className="h-1 flex-1 overflow-hidden rounded-full bg-foreground/[0.06]">
+                        <motion.div
+                          initial={reduce ? false : { scaleX: 0 }}
+                          animate={{ scaleX: 1 }}
+                          transition={
+                            reduce
+                              ? { duration: 0 }
+                              : {
+                                  duration: 0.65,
+                                  delay: 0.08 + idx * 0.06,
+                                  ease: EASE.entrance,
+                                }
+                          }
+                          style={{
+                            width: `${project.progress}%`,
+                            transformOrigin: 'left',
+                          }}
+                          className="h-full rounded-full bg-primary transition-opacity group-hover:opacity-90"
+                        />
+                      </div>
+                      <span className="w-8 shrink-0 text-right font-mono text-[10px] font-medium tabular-nums text-muted-foreground">
+                        {project.progress}%
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="mt-5 flex items-center justify-between border-t border-foreground/[0.06] pt-3.5 text-[11px] text-muted-foreground">
+            <span>{stats.activeProjects} in progress</span>
+            <Link href="/finances/project-profitability" className="hover:text-foreground transition-colors">
+              Project Profitability →
+            </Link>
+          </div>
+        </div>
+
+        {/* Recent Service Invoices Ledger */}
+        <div className="flex flex-col justify-between rounded-2xl border border-foreground/[0.08] bg-card p-5 sm:p-6 lg:col-span-7">
+          <div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-sm font-semibold tracking-tight text-foreground">
+                  Recent Invoices
+                </h2>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Latest billing activity &amp; settlement status
+                </p>
+              </div>
+
+              {/* Filter Pill Switcher */}
+              <div className="flex items-center gap-3 self-start sm:self-auto">
+                <div className="inline-flex items-center rounded-lg border border-foreground/[0.08] bg-muted/50 p-0.5">
+                  {INVOICE_FILTERS.map(tab => {
+                    const active = invoiceFilter === tab.id
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setInvoiceFilter(tab.id)}
+                        className={cn(
+                          'relative cursor-pointer rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors',
+                          active
+                            ? 'text-foreground'
+                            : 'text-muted-foreground hover:text-foreground'
+                        )}
+                      >
+                        {active ? (
+                          <motion.span
+                            layoutId="invoice-filter-pill"
+                            transition={
+                              reduce
+                                ? { duration: 0 }
+                                : { type: 'spring', stiffness: 460, damping: 34 }
+                            }
+                            className="absolute inset-0 rounded-md bg-card shadow-2xs ring-1 ring-foreground/[0.08]"
+                          />
+                        ) : null}
+                        <span className="relative z-10">{tab.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <Link
+                  href="/invoices"
+                  className="group inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <span>Ledger</span>
+                  <ArrowUpRight className="size-3 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                </Link>
+              </div>
+            </div>
+
+            {filteredInvoices.length === 0 ? (
+              <div className="mt-6 flex flex-col items-center justify-center rounded-xl border border-dashed border-foreground/12 py-12 text-center">
+                <p className="text-xs font-medium text-foreground">
+                  {stats.recentInvoices.length === 0
+                    ? 'No invoices issued yet'
+                    : 'No invoices match this filter'}
+                </p>
+                {stats.recentInvoices.length === 0 ? (
+                  <Link
+                    href="/invoices/new"
+                    className="mt-2.5 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                  >
+                    Create First Invoice <ArrowRight className="size-3" />
+                  </Link>
+                ) : null}
+              </div>
+            ) : (
+              <div className="mt-5 divide-y divide-foreground/[0.06]">
+                {filteredInvoices.slice(0, 6).map(inv => {
+                  const statusMeta = getInvoiceStatusMeta(inv.status, inv.dueAmount)
                   return (
-                    <div
-                      key={owner.id}
-                      style={{
-                        width: `${owner.equityPercentage}%`,
-                        backgroundColor: color,
-                      }}
-                      className="h-full transition-all duration-700 hover:opacity-85 cursor-pointer"
-                      title={`${owner.name}: ${owner.equityPercentage}%`}
-                    />
+                    <Link
+                      key={inv.id}
+                      href={`/invoices/${inv.id}`}
+                      className="group -mx-2 flex items-center justify-between gap-4 rounded-xl px-2 py-3 transition-colors hover:bg-muted/40"
+                    >
+                      <div className="flex min-w-0 items-center gap-3.5">
+                        <span
+                          className={cn(
+                            'size-2 shrink-0 rounded-full',
+                            statusMeta.dot
+                          )}
+                        />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs font-semibold text-foreground transition-colors group-hover:text-primary">
+                              {inv.invoiceNumber}
+                            </span>
+                            <span className="text-foreground/20">·</span>
+                            <span className="truncate text-xs font-medium text-foreground/90">
+                              {inv.clientName}
+                            </span>
+                          </div>
+                          <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
+                            <span className="font-mono">
+                              {formatShortDate(inv.issueDate)}
+                            </span>
+                            <span className="text-foreground/20">·</span>
+                            <span className={cn('font-medium', statusMeta.text)}>
+                              {statusMeta.label}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex shrink-0 items-center gap-3 text-right">
+                        <div className="font-mono tabular-nums">
+                          <p className="text-xs font-semibold text-foreground">
+                            ৳{inv.totalAmount.toLocaleString()}
+                          </p>
+                          <p
+                            className={cn(
+                              'text-[10px]',
+                              inv.dueAmount > 0
+                                ? 'text-amber-600 dark:text-amber-400'
+                                : 'text-muted-foreground/70'
+                            )}
+                          >
+                            {inv.dueAmount > 0
+                              ? `Due ৳${inv.dueAmount.toLocaleString()}`
+                              : 'Settled'}
+                          </p>
+                        </div>
+                        <ArrowUpRight className="size-3.5 text-muted-foreground/40 transition-all duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-foreground" />
+                      </div>
+                    </Link>
                   )
                 })}
               </div>
-            </div>
+            )}
+          </div>
 
-            {/* Individual Partner Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-              {stats.owners.length === 0 ? (
-                <div className="col-span-3 text-center py-6 text-muted-foreground border border-dashed rounded-xl">
-                  <p>No partners configured yet.</p>
-                  <Link href="/equity" className="text-xs text-primary underline mt-1 block">
-                    Add Founders / Partners
-                  </Link>
-                </div>
-              ) : (
-                stats.owners.map((owner, idx) => {
-                  const color = PARTNER_COLORS[idx % PARTNER_COLORS.length]
-                  return (
-                    <div
-                      key={owner.id}
-                      className="p-3.5 rounded-xl bg-muted/40 border border-border/80 space-y-2 hover:border-primary/40 transition-all"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                            <h4 className="font-bold text-foreground text-sm leading-tight">{owner.name}</h4>
-                          </div>
-                          <span className="text-[11px] text-muted-foreground block pl-3.5">{owner.title}</span>
-                        </div>
-                        <Badge
-                          variant="outline"
-                          className="font-mono font-bold text-xs"
-                          style={{ borderColor: `${color}60`, color: color }}
-                        >
-                          {owner.equityPercentage}%
-                        </Badge>
-                      </div>
+          <div className="mt-4 flex items-center justify-between border-t border-foreground/[0.06] pt-3.5 text-[11px] text-muted-foreground">
+            <span>
+              Showing {Math.min(6, filteredInvoices.length)} of {stats.recentInvoices.length} latest
+            </span>
+            <Link href="/invoices/new" className="font-medium text-primary hover:underline">
+              + Issue Invoice
+            </Link>
+          </div>
+        </div>
+      </motion.section>
 
-                      <div className="pt-2 border-t border-border/60 flex justify-between items-center text-xs">
-                        <span className="text-muted-foreground text-[11px]">Capital Balance:</span>
-                        <span className="font-mono font-bold text-foreground">
-                          ৳{owner.capitalBalance.toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
-                  )
-                })
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* 6. TWO COLUMN ROW: ACTIVE PROJECTS & RECENT INVOICES */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Active Client Projects Pipeline */}
-        <motion.div variants={itemVariants}>
-          <Card className="bg-card border-border/80 text-card-foreground artyx-card rounded-2xl shadow-xs overflow-hidden h-full flex flex-col justify-between">
-            <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-border">
-              <div>
-                <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
-                  <Building2 className="size-4 text-purple-500" />
-                  Active Project Pipeline
-                </CardTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Milestone progress and contract values
-                </p>
-              </div>
-              <Link href="/projects" className="text-xs text-primary font-mono font-bold hover:underline">
-                All Projects →
-              </Link>
-            </CardHeader>
-            <CardContent className="p-4 space-y-3.5 flex-1">
-              {(stats.activeProjectsList && stats.activeProjectsList.length > 0
-                ? stats.activeProjectsList
-                : [
-                    {
-                      id: 'p1',
-                      name: 'Custom Next.js & ERP Platform',
-                      clientName: 'Apex Logistics',
-                      serviceCategory: 'Software Engineering',
-                      budget: 250000,
-                      progress: 78,
-                    },
-                    {
-                      id: 'p2',
-                      name: 'Meta Ads & Growth Marketing',
-                      clientName: 'TechDrive Solutions',
-                      serviceCategory: 'Performance Retainer',
-                      budget: 120000,
-                      progress: 92,
-                    },
-                    {
-                      id: 'p3',
-                      name: 'FinTech Mobile App UI/UX',
-                      clientName: 'Dhaka Ventures',
-                      serviceCategory: 'UI/UX Design',
-                      budget: 180000,
-                      progress: 45,
-                    },
-                  ]
-              ).map(project => (
-                <div
-                  key={project.id}
-                  className="p-3 rounded-xl bg-muted/40 border border-border/70 space-y-2 hover:bg-muted/60 transition-colors"
-                >
-                  <div className="flex justify-between items-start text-xs">
-                    <div>
-                      <h4 className="font-bold text-foreground text-sm">{project.name}</h4>
-                      <p className="text-[11px] text-muted-foreground">{project.clientName} • {project.serviceCategory}</p>
-                    </div>
-                    <span className="font-mono font-bold text-foreground text-sm">
-                      ৳{project.budget.toLocaleString()}
-                    </span>
-                  </div>
-
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[10px] font-mono text-muted-foreground">
-                      <span>Milestone Completion</span>
-                      <span className="font-bold text-foreground">{project.progress}%</span>
-                    </div>
-                    <div className="w-full bg-muted/80 rounded-full h-1.5 overflow-hidden">
-                      <div
-                        className="bg-primary h-full rounded-full transition-all duration-700"
-                        style={{ width: `${project.progress}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Recent Service Invoices */}
-        <motion.div variants={itemVariants}>
-          <Card className="bg-card border-border/80 text-card-foreground artyx-card rounded-2xl shadow-xs overflow-hidden h-full flex flex-col justify-between">
-            <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-border">
-              <div>
-                <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
-                  <Receipt className="size-4 text-primary" />
-                  Recent Service Invoices
-                </CardTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Latest client billing and settlement status
-                </p>
-              </div>
-              <Link href="/invoices" className="text-xs text-primary font-mono font-bold hover:underline">
-                View All ({stats.recentInvoices.length}) →
-              </Link>
-            </CardHeader>
-            <CardContent className="p-0 text-xs flex-1">
-              {stats.recentInvoices.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <p>No invoices issued yet.</p>
-                  <Link href="/invoices/new" className="text-xs text-primary underline mt-1 block">
-                    Create First Client Invoice
-                  </Link>
-                </div>
-              ) : (
-                <div className="divide-y divide-border">
-                  {stats.recentInvoices.map(inv => (
-                    <div
-                      key={inv.id}
-                      className="p-3.5 flex items-center justify-between hover:bg-muted/30 transition-colors"
-                    >
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-2">
-                          <Link
-                            href={`/invoices/${inv.id}`}
-                            className="font-mono font-bold text-primary hover:underline"
-                          >
-                            {inv.invoiceNumber}
-                          </Link>
-                          <Badge
-                            className={
-                              inv.status === 'PAID'
-                                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 text-[10px]'
-                                : inv.status === 'PARTIALLY_PAID'
-                                ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30 text-[10px]'
-                                : 'bg-sky-500/15 text-sky-700 dark:text-sky-400 border-sky-500/30 text-[10px]'
-                            }
-                          >
-                            {inv.status}
-                          </Badge>
-                        </div>
-                        <p className="text-xs font-semibold text-foreground">{inv.clientName}</p>
-                        <p className="text-[11px] text-muted-foreground font-mono">
-                          {new Date(inv.issueDate).toLocaleDateString()}
-                        </p>
-                      </div>
-
-                      <div className="text-right space-y-0.5">
-                        <span className="font-mono font-bold text-foreground text-sm block">
-                          ৳{inv.totalAmount.toLocaleString()}
-                        </span>
-                        {inv.dueAmount > 0 ? (
-                          <span className="text-[11px] font-mono font-semibold text-amber-700 dark:text-amber-400 block">
-                            Due: ৳{inv.dueAmount.toLocaleString()}
-                          </span>
-                        ) : (
-                          <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold block">
-                            ✓ Settled
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-
-      {/* 7. CLIENT SNAPSHOT CARDS */}
-      <motion.div variants={itemVariants} className="space-y-3">
-        <div className="flex justify-between items-center">
-          <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-            <UsersRound className="size-4 text-primary" />
-            Client Directory Snapshot
-          </h2>
-          <Link href="/clients" className="text-xs text-primary hover:underline font-mono font-semibold">
-            View All Clients ({stats.totalClients}) →
+      {/* 5. UNIFIED CLIENT PORTFOLIO STRIP (HAIRLINE ARCHITECTURAL ROW) */}
+      <motion.section
+        variants={sectionVariants}
+        className="overflow-hidden rounded-2xl border border-foreground/[0.08] bg-card"
+      >
+        <div className="flex items-center justify-between border-b border-foreground/[0.06] px-5 py-3.5 sm:px-6">
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-semibold tracking-tight text-foreground">
+              Client Portfolio
+            </h2>
+            <span className="font-mono text-[11px] text-muted-foreground">
+              ({stats.totalClients})
+            </span>
+          </div>
+          <Link
+            href="/clients"
+            className="group inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <span>Directory</span>
+            <ArrowUpRight className="size-3 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {stats.recentClients.slice(0, 4).map(c => (
-            <Card
-              key={c.id}
-              className="bg-card border-border/80 text-card-foreground p-4 space-y-2.5 artyx-card rounded-2xl shadow-xs hover:border-primary/40 transition-colors"
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-md bg-muted text-primary font-bold border border-border">
-                    {c.clientCode}
-                  </span>
-                  <h3 className="font-bold text-foreground mt-1.5 text-sm truncate max-w-[170px]">
-                    {c.companyName}
+        {stats.recentClients.length === 0 ? (
+          <div className="px-6 py-8 text-center text-xs text-muted-foreground">
+            No clients registered yet.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 divide-y divide-foreground/[0.06] sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-4 lg:divide-x">
+            {stats.recentClients.slice(0, 4).map(client => (
+              <Link
+                key={client.id}
+                href={`/clients/${client.id}`}
+                className="group flex flex-col justify-between gap-3 p-5 transition-colors hover:bg-muted/35"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                      {client.clientCode}
+                    </span>
+                    <span className="text-[10px] font-medium text-muted-foreground/80">
+                      {client.clientType.replace(/_/g, ' ')}
+                    </span>
+                  </div>
+                  <h3 className="truncate text-sm font-semibold text-foreground transition-colors group-hover:text-primary">
+                    {client.companyName}
                   </h3>
-                  <p className="text-xs text-muted-foreground truncate max-w-[170px]">{c.contactPerson}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {client.contactPerson}
+                  </p>
                 </div>
-                <Badge variant="outline" className="text-[10px] border-border text-muted-foreground">
-                  {c.clientType.replace('_', ' ')}
-                </Badge>
-              </div>
 
-              <div className="flex justify-between items-center pt-2 border-t border-border text-xs">
-                <span className="text-muted-foreground text-[11px]">Outstanding Due:</span>
-                <span
-                  className={`font-mono font-bold ${
-                    c.dueAmount > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'
-                  }`}
-                >
-                  ৳{c.dueAmount.toLocaleString()}
-                </span>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </motion.div>
+                <div className="flex items-center justify-between border-t border-foreground/[0.06] pt-2.5 text-[11px]">
+                  <span className="text-muted-foreground">Balance</span>
+                  <span
+                    className={cn(
+                      'inline-flex items-center gap-1.5 font-mono font-semibold tabular-nums',
+                      client.dueAmount > 0
+                        ? 'text-amber-600 dark:text-amber-400'
+                        : 'text-emerald-600 dark:text-emerald-400'
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'size-1.5 rounded-full',
+                        client.dueAmount > 0 ? 'bg-amber-500' : 'bg-emerald-500'
+                      )}
+                    />
+                    ৳{client.dueAmount.toLocaleString()}
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </motion.section>
     </motion.div>
   )
 }
