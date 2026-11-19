@@ -178,7 +178,8 @@ if (
   !globalForPrisma.prisma ||
   !('projectTask' in (globalForPrisma.prisma as unknown as Record<string, unknown>)) ||
   !('teamChatMessage' in (globalForPrisma.prisma as unknown as Record<string, unknown>)) ||
-  !('ceoVaultItem' in (globalForPrisma.prisma as unknown as Record<string, unknown>))
+  !('ceoVaultItem' in (globalForPrisma.prisma as unknown as Record<string, unknown>)) ||
+  !('passwordResetToken' in (globalForPrisma.prisma as unknown as Record<string, unknown>))
 ) {
   globalForPrisma.prisma = createPrismaClient()
 }

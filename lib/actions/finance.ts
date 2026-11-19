@@ -695,16 +695,21 @@ const expenseCategorySchema = z.object({
 export async function getCustomExpenseCategories() {
   await requireAuth()
   const standardCodes = Object.values(CATEGORY_COA_MAP)
-  return prisma.chartOfAccount.findMany({
-    where: {
-      type: 'EXPENSE',
-      isActive: true,
-      parent: { code: '5200' },
-      code: { notIn: standardCodes },
-    },
-    select: { id: true, name: true, code: true },
-    orderBy: { name: 'asc' },
-  })
+  return withDatabaseReadFallback(
+    () =>
+      prisma.chartOfAccount.findMany({
+        where: {
+          type: 'EXPENSE',
+          isActive: true,
+          parent: { code: '5200' },
+          code: { notIn: standardCodes },
+        },
+        select: { id: true, name: true, code: true },
+        orderBy: { name: 'asc' },
+      }),
+    [],
+    'getCustomExpenseCategories'
+  )
 }
 
 export async function createExpenseCategory(name: string) {
@@ -1030,7 +1035,7 @@ export async function createExpense(data: z.infer<typeof expenseSchema>) {
       })
 
       safeRevalidatePath('/expenses')
-      return ok(expense)
+      return ok({ ...expense, amount: Number(expense.amount) })
     })
   } catch (error: any) {
     return fail(error.message || 'An error occurred while creating expense')
@@ -1320,7 +1325,7 @@ export async function approveExpense(expenseId: string) {
     safeRevalidatePath('/reports/sales')
     safeRevalidatePath('/ledger/trial-balance')
     safeRevalidatePath('/ledger/transactions')
-    return ok(expense)
+    return ok({ ...expense, amount: Number(expense.amount) })
   } catch (error: any) {
     return fail(error.message || 'Failed to approve expense')
   }
@@ -1360,7 +1365,7 @@ export async function rejectExpense(expenseId: string) {
     safeRevalidatePath('/', 'page')
     safeRevalidatePath('/expenses')
     safeRevalidatePath('/reports/sales')
-    return ok(expense)
+    return ok({ ...expense, amount: Number(expense.amount) })
   } catch (error: any) {
     return fail(error.message || 'Failed to reject expense')
   }
@@ -1369,24 +1374,33 @@ export async function rejectExpense(expenseId: string) {
 export async function getExpenses(outletId: string) {
   const user = await requireAuth()
   validateOutletAccess(user, outletId)
-  return prisma.expense.findMany({
-    where: { outletId },
-    include: {
-      account: { select: { name: true, code: true } },
-      bankAccount: { select: { bankName: true, accountName: true } },
-      createdBy: { select: { name: true } },
-      project: {
-        select: {
-          id: true,
-          name: true,
-          projectCode: true,
-          client: { select: { companyName: true } },
+  const rows = await withDatabaseReadFallback(
+    () =>
+      prisma.expense.findMany({
+        where: { outletId },
+        include: {
+          account: { select: { name: true, code: true } },
+          bankAccount: { select: { bankName: true, accountName: true } },
+          createdBy: { select: { name: true } },
+          project: {
+            select: {
+              id: true,
+              name: true,
+              projectCode: true,
+              client: { select: { companyName: true } },
+            },
+          },
         },
-      },
-    },
-    orderBy: { expenseDate: 'desc' },
-    take: 200,
-  })
+        orderBy: { expenseDate: 'desc' },
+        take: 200,
+      }),
+    [],
+    `getExpenses(${outletId})`
+  )
+  return rows.map(row => ({
+    ...row,
+    amount: Number(row.amount),
+  }))
 }
 
 export async function getAccountLedger(accountId: string) {

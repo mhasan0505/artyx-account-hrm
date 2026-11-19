@@ -18,13 +18,14 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { updateBankAccount } from '@/lib/actions/bank'
-import type { BankAccount } from '@prisma/client'
+import { updateBankAccount, type getBankAccounts } from '@/lib/actions/bank'
 import { useTransition } from 'react'
 import { toast } from 'sonner'
 
+type SerializedBankAccount = Awaited<ReturnType<typeof getBankAccounts>>[number]
+
 interface EditBankDialogProps {
-  account: BankAccount
+  account: SerializedBankAccount
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess: () => void

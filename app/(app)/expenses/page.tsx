@@ -15,20 +15,15 @@ import {
   rejectExpense,
 } from '@/lib/actions/finance'
 import { getBankAccounts } from '@/lib/actions/bank'
-import { getEmployees } from '@/lib/actions/hr'
+import { getEmployeeDirectory } from '@/lib/actions/hr'
 import { getEmployeeSalaryDetails } from '@/lib/actions/payroll'
-import { getAllAgencyProjects } from '@/lib/actions/agency-clients'
 import { VoucherPrintModal } from '@/components/ap-ar/voucher-print-modal'
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import {
-  Building2,
   Calendar,
   CheckCircle2,
   Clock,
-  CreditCard,
-  DollarSign,
-  Filter,
   Plus,
   Receipt,
   RefreshCw,
@@ -36,12 +31,11 @@ import {
   Search,
   User,
   X,
-  XCircle,
 } from 'lucide-react'
 
 type BankAccount = Awaited<ReturnType<typeof getBankAccounts>>[number]
 type Expense = Awaited<ReturnType<typeof getExpenses>>[number]
-type Employee = Awaited<ReturnType<typeof getEmployees>>[number]
+type Employee = Awaited<ReturnType<typeof getEmployeeDirectory>>[number]
 type CustomExpenseCategory = Awaited<ReturnType<typeof getCustomExpenseCategories>>[number]
 
 const EXPENSE_CATEGORIES = [
@@ -158,7 +152,6 @@ export default function ExpensesPage() {
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
   const [customCategories, setCustomCategories] = useState<CustomExpenseCategory[]>([])
-  const [projects, setProjects] = useState<any[]>([])
   const [outletId, setOutletId] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [printVoucher, setPrintVoucher] = useState<any | null>(null)
@@ -175,7 +168,6 @@ export default function ExpensesPage() {
   const [expDate, setExpDate] = useState(new Date().toISOString().slice(0, 10))
   const [expCategory, setExpCategory] = useState<string>('Rent')
   const [expCategoryAccountId, setExpCategoryAccountId] = useState('')
-  const [expProjectId, setExpProjectId] = useState<string>('none')
   const [expEmployeeId, setExpEmployeeId] = useState<string>('')
   const [expSalaryMonth, setExpSalaryMonth] = useState<string>(() => {
     const now = new Date()
@@ -202,18 +194,33 @@ export default function ExpensesPage() {
 
   async function loadData(oid: string) {
     if (!oid) return
-    const [expList, banks, emps, categories, prjs] = await Promise.all([
+    const [expRes, banksRes, empsRes, categoriesRes] = await Promise.allSettled([
       getExpenses(oid),
       getBankAccounts(),
-      getEmployees(),
+      getEmployeeDirectory(),
       getCustomExpenseCategories(),
-      getAllAgencyProjects(),
     ])
-    setExpenses(expList)
-    setBankAccounts(banks)
-    setEmployees(emps.filter(e => e.isActive))
-    setCustomCategories(categories)
-    setProjects(prjs?.projects || [])
+    if (expRes.status === 'fulfilled') {
+      setExpenses(expRes.value)
+    } else {
+      console.error('[expenses] failed to load expenses:', expRes.reason)
+      toast.error('Failed to load expenses')
+    }
+    if (banksRes.status === 'fulfilled') {
+      setBankAccounts(banksRes.value)
+    } else {
+      console.error('[expenses] failed to load bank accounts:', banksRes.reason)
+    }
+    if (empsRes.status === 'fulfilled') {
+      setEmployees(empsRes.value.filter(e => e.isActive))
+    } else {
+      console.error('[expenses] failed to load employees:', empsRes.reason)
+    }
+    if (categoriesRes.status === 'fulfilled') {
+      setCustomCategories(categoriesRes.value)
+    } else {
+      console.error('[expenses] failed to load custom categories:', categoriesRes.reason)
+    }
   }
 
   useEffect(() => {
@@ -223,6 +230,9 @@ export default function ExpensesPage() {
         const oid = s?.user?.outletId ?? ''
         setOutletId(oid)
         if (oid) loadData(oid)
+      })
+      .catch(err => {
+        console.error('[expenses] failed to load session:', err)
       })
   }, [])
 

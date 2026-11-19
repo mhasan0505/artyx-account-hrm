@@ -195,5 +195,4 @@ need to fix
 
 1.Gifts items stock not showing in sales terminal gift modal , its says out of stock.
 2. In cart when choose same item multiple times it displays as multiple line keep it one line.
-3. in serial choosing modal for products make it tikmark same as gift item.
-
+3. in serial choosing modal for products make it tikmark same as gift it

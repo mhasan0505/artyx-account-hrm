@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { setMyPin, updateMyProfile } from "@/lib/actions/users";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Link from "next/link";
 import * as React from "react";
 import {
   Building2,
@@ -298,9 +299,19 @@ export function ProfileClient({ profile }: { profile: Profile }) {
 
             <Separator />
 
-            <p className="text-sm font-medium text-muted-foreground">
-              Change Password — leave blank to keep current password
-            </p>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-medium text-muted-foreground">
+                Change Password — leave blank to keep current password
+              </p>
+              {profile.role !== "SUPER_ADMIN" && (
+                <Link
+                  href="/forgot-password"
+                  className="text-xs font-semibold text-primary hover:underline"
+                >
+                  Forgot current password? Reset via email
+                </Link>
+              )}
+            </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
               <FormField

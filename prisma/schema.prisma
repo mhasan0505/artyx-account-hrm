@@ -333,6 +333,7 @@ model User {
   taskTimeLogs              TaskTimeLog[]            @relation("TaskTimeLogUser")
   taskComments              TaskComment[]            @relation("TaskCommentUser")
   chatMessages              TeamChatMessage[]        @relation("ChatMessages")
+  passwordResetTokens       PasswordResetToken[]
   auditLogs                 AuditLog[]
   saleEditLogs              SaleEditLog[]            @relation("SaleEdits")
   purchaseInvoiceEditLogs   PurchaseInvoiceEditLog[] @relation("PurchaseInvoiceEdits")
@@ -2438,5 +2439,24 @@ model CeoVaultItem {
   @@index([category, isFavorite])
   @@index([folder])
 }
+
+// ─────────────────────────────────────────────
+// PASSWORD RESET TOKENS (NON-SUPER-ADMIN USERS)
+// ─────────────────────────────────────────────
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  codeHash  String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@index([expiresAt])
+}
+
 
 

@@ -20,8 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { deleteBankAccount } from '@/lib/actions/bank'
-import type { BankAccount } from '@prisma/client'
+import { deleteBankAccount, type getBankAccounts } from '@/lib/actions/bank'
 import { FileText, Pencil, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -30,10 +29,12 @@ import { toast } from 'sonner'
 import { CreateBankDialog } from './create-bank-dialog'
 import { EditBankDialog } from './edit-bank-dialog'
 
-export function BankAccountsTable({ accounts }: { accounts: BankAccount[] }) {
+type SerializedBankAccount = Awaited<ReturnType<typeof getBankAccounts>>[number]
+
+export function BankAccountsTable({ accounts }: { accounts: SerializedBankAccount[] }) {
   const router = useRouter()
-  const [editTarget, setEditTarget] = useState<BankAccount | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<BankAccount | null>(null)
+  const [editTarget, setEditTarget] = useState<SerializedBankAccount | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<SerializedBankAccount | null>(null)
   const [isDeleting, startDelete] = useTransition()
 
   function handleDeleted() {

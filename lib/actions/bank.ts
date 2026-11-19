@@ -787,7 +787,7 @@ export async function deleteBankAccount(id: string) {
 
 export async function getBankAccounts() {
   const user = await requireAuth()
-  return withDatabaseReadFallback(
+  const accounts = await withDatabaseReadFallback(
     () =>
       prisma.bankAccount.findMany({
         where: user.role === 'SUPER_ADMIN' ? {} : { outletId: user.outletId },
@@ -797,6 +797,13 @@ export async function getBankAccounts() {
     [],
     'getBankAccounts'
   )
+  return accounts.map(account => ({
+    ...account,
+    openingBalance: Number(account.openingBalance),
+    currentBalance: Number(account.currentBalance),
+    transactionChargePct: Number(account.transactionChargePct),
+    cashoutChargePct: Number(account.cashoutChargePct),
+  }))
 }
 
 export async function getBankTransactions(accountId: string) {
