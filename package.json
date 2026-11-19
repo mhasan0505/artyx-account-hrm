@@ -6,7 +6,7 @@
     "dev": "next dev -H 0.0.0.0 --turbopack",
     "socket": "tsx server/socket.ts",
     "dev:full": "pnpm db:generate && next dev -H 0.0.0.0 --turbopack",
-    "build": "prisma generate && cross-env NODE_OPTIONS=--max-old-space-size=2048 next build",
+    "build": "prisma generate && node scripts/fix-prisma-client-path.mjs && cross-env NODE_OPTIONS=--max-old-space-size=2048 next build",
     "vercel-build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
     "test": "vitest run",

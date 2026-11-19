@@ -143,6 +143,10 @@ export const ROUTE_ACCESS: Array<{ prefix: string; roles: UserRoleString[] }> = 
     roles: ['SUPER_ADMIN'],
   },
   {
+    prefix: '/vault',
+    roles: ['SUPER_ADMIN'],
+  },
+  {
     prefix: '/users',
     roles: ['SUPER_ADMIN', 'ADMIN'],
   },
@@ -179,8 +183,13 @@ export function canAccessRoute(
   // Strip query parameters and trailing slashes for clean matching
   const cleanPath = pathname.split('?')[0].split('#')[0].replace(/\/+$/, '') || '/'
 
-  // CEO exclusive route: strictly accessible only to CEO user
-  if (cleanPath === '/money-management' || cleanPath.startsWith('/money-management/')) {
+  // CEO exclusive routes: strictly accessible only to CEO user
+  if (
+    cleanPath === '/money-management' ||
+    cleanPath.startsWith('/money-management/') ||
+    cleanPath === '/vault' ||
+    cleanPath.startsWith('/vault/')
+  ) {
     const email = user?.email?.toLowerCase()
     const customRole = user?.customRole?.toUpperCase()
     return email === 'mhasan.coder@gmail.com' || customRole === 'CEO'

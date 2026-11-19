@@ -2400,3 +2400,43 @@ model TeamChatMessage {
   @@index([userId])
 }
 
+// ─────────────────────────────────────────────
+// CEO PRIVATE CREDENTIAL VAULT (AES-256-GCM)
+// ─────────────────────────────────────────────
+
+enum CeoVaultCategory {
+  EMAIL
+  SOCIAL_MEDIA
+  VPS_SSH
+  DOMAIN_HOSTING
+  AGENCY_TOOL
+  DATABASE_API
+  FINANCE_BILLING
+  OTHER
+}
+
+model CeoVaultItem {
+  id               String           @id @default(cuid())
+  title            String
+  category         CeoVaultCategory @default(OTHER)
+  folder           String           @default("Agency Core")
+  provider         String?
+  loginUrl         String?
+  username         String?
+  host             String?
+  port             String?
+  tags             String[]         @default([])
+  isFavorite       Boolean          @default(false)
+  hasTotp          Boolean          @default(false)
+  hasSshKey        Boolean          @default(false)
+  encryptedPayload String           @db.Text
+  lastRotatedAt    DateTime         @default(now())
+  lastAccessedAt   DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@index([category, isFavorite])
+  @@index([folder])
+}
+
+
