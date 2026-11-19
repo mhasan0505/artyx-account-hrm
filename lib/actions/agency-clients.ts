@@ -4,6 +4,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/db'
 import { ClientStatus, ClientType, CredentialCategory, Prisma } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
+import { notifyExecutives } from '@/lib/notifications/executive-notifier'
 
 export type ClientFilterParams = {
   search?: string
@@ -246,6 +247,18 @@ export async function createAgencyClient(data: {
     return client
   })
 
+  await notifyExecutives({
+    actorId: session.user.id,
+    actorName: session.user.name,
+    category: 'CLIENT',
+    priority: 'NORMAL',
+    eventKey: 'client.created',
+    title: `New Client Onboarded: ${newClient.companyName}`,
+    body: `${session.user.name || 'Executive'} added ${newClient.companyName} (${newClient.clientCode}) — Contact: ${newClient.contactPerson}.`,
+    url: `/clients/${newClient.id}`,
+    metadata: { clientId: newClient.id },
+  })
+
   revalidatePath('/clients')
   return { success: true, client: newClient }
 }
@@ -406,6 +419,18 @@ export async function addClientRetainer(
     },
   })
 
+  await notifyExecutives({
+    actorId: session.user.id,
+    actorName: session.user.name,
+    category: 'CLIENT',
+    priority: 'NORMAL',
+    eventKey: 'client.retainer_added',
+    title: `New Retainer: ${retainer.serviceName}`,
+    body: `${session.user.name || 'Executive'} set up ৳${Number(retainer.monthlyFee).toLocaleString()}/mo retainer.`,
+    url: `/clients/${clientId}`,
+    metadata: { clientId, retainerId: retainer.id },
+  })
+
   revalidatePath(`/clients/${clientId}`)
   revalidatePath('/clients/retainers')
   return { success: true, retainer }
@@ -498,6 +523,18 @@ export async function createAgencyProject(data: {
       description: data.description?.trim() || null,
       status: 'IN_PROGRESS',
     },
+  })
+
+  await notifyExecutives({
+    actorId: session.user.id,
+    actorName: session.user.name,
+    category: 'PROJECT',
+    priority: 'NORMAL',
+    eventKey: 'project.created',
+    title: `New Project: ${project.name}`,
+    body: `${session.user.name || 'Executive'} created ${project.projectCode} (${project.serviceCategory}) • Value: ৳${Number(project.contractValue).toLocaleString()}.`,
+    url: `/projects/${project.id}`,
+    metadata: { projectId: project.id, clientId: data.clientId },
   })
 
   revalidatePath(`/clients/${data.clientId}`)

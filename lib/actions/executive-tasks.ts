@@ -8,6 +8,10 @@ import {
   getCurrentExecutiveUser,
   getExecutiveMembers,
 } from '@/lib/auth/executive-server'
+import {
+  dispatchNotification,
+  notifyExecutives,
+} from '@/lib/notifications/executive-notifier'
 import type {
   ExecTaskAttachment,
   ExecTaskChecklistItem,
@@ -16,6 +20,13 @@ import type {
   ExecTaskRecord,
   ExecTaskStatus,
 } from '@/lib/executive-tasks/types'
+
+const EXEC_STATUS_LABELS: Record<string, string> = {
+  TODO: 'To Do',
+  IN_PROGRESS: 'In Progress',
+  IN_REVIEW: 'In Review',
+  DONE: 'Done',
+}
 
 function parseJsonArray<T>(val: unknown): T[] {
   if (Array.isArray(val)) return val as T[]
@@ -147,6 +158,47 @@ export async function createExecutiveTask(
   })
 
   const badgeMap = await buildBadgeLookup()
+
+  // Notify assigned executive (direct high/urgent priority) + other executives
+  const members = await getExecutiveMembers()
+  const otherExecIds = members
+    .map((m) => m.id)
+    .filter((id) => id !== exec.id && id !== created.assigneeId)
+
+  const isUrgent = created.priority === 'URGENT'
+
+  if (created.assigneeId && created.assigneeId !== exec.id) {
+    await dispatchNotification({
+      actorId: exec.id,
+      actorName: exec.name,
+      actorBadge: exec.badge,
+      recipientIds: [created.assigneeId],
+      category: 'EXECUTIVE_TASK',
+      priority: isUrgent ? 'URGENT' : 'HIGH',
+      eventKey: 'exec_task.assigned',
+      title: `Assigned to you: ${created.title}`,
+      body: `${exec.name} (${exec.badge}) assigned you a ${created.priority.toLowerCase()} priority executive task.${created.dueDate ? ` Due ${created.dueDate.toLocaleDateString()}.` : ''}`,
+      url: '/executive-tasks',
+      metadata: { taskId: created.id, priority: created.priority },
+    })
+  }
+
+  if (otherExecIds.length > 0) {
+    await dispatchNotification({
+      actorId: exec.id,
+      actorName: exec.name,
+      actorBadge: exec.badge,
+      recipientIds: otherExecIds,
+      category: 'EXECUTIVE_TASK',
+      priority: isUrgent ? 'URGENT' : 'NORMAL',
+      eventKey: 'exec_task.created',
+      title: `New Executive Task: ${created.title}`,
+      body: `${exec.name} (${exec.badge}) created a ${created.priority.toLowerCase()} priority task${created.assignee ? ` assigned to ${created.assignee.name}` : ''}.`,
+      url: '/executive-tasks',
+      metadata: { taskId: created.id, priority: created.priority },
+    })
+  }
+
   revalidatePath('/executive-tasks')
   return ok(serializeTask(created, badgeMap))
 }
@@ -205,6 +257,79 @@ export async function updateExecutiveTask(
   })
 
   const badgeMap = await buildBadgeLookup()
+
+  // Smart diff-based notifications to relevant executives
+  const assigneeChanged =
+    input.assigneeId !== undefined && existing.assigneeId !== updated.assigneeId
+  const statusChanged =
+    input.status !== undefined && existing.status !== updated.status
+  const escalatedUrgent =
+    input.priority === 'URGENT' && existing.priority !== 'URGENT'
+
+  if (assigneeChanged && updated.assigneeId && updated.assigneeId !== exec.id) {
+    await dispatchNotification({
+      actorId: exec.id,
+      actorName: exec.name,
+      actorBadge: exec.badge,
+      recipientIds: [updated.assigneeId],
+      category: 'EXECUTIVE_TASK',
+      priority: updated.priority === 'URGENT' ? 'URGENT' : 'HIGH',
+      eventKey: 'exec_task.reassigned',
+      title: `Task assigned to you: ${updated.title}`,
+      body: `${exec.name} (${exec.badge}) assigned you to "${updated.title}" (${EXEC_STATUS_LABELS[updated.status] || updated.status}).`,
+      url: '/executive-tasks',
+      metadata: { taskId: updated.id, status: updated.status },
+    })
+  }
+
+  if (statusChanged) {
+    const fromLabel = EXEC_STATUS_LABELS[existing.status] || existing.status
+    const toLabel = EXEC_STATUS_LABELS[updated.status] || updated.status
+    await notifyExecutives({
+      actorId: exec.id,
+      actorName: exec.name,
+      actorBadge: exec.badge,
+      category: 'EXECUTIVE_TASK',
+      priority:
+        updated.priority === 'URGENT'
+          ? 'URGENT'
+          : updated.status === 'IN_REVIEW' || updated.status === 'DONE'
+            ? 'HIGH'
+            : 'NORMAL',
+      eventKey: 'exec_task.status_changed',
+      title: `Task moved to ${toLabel}: ${updated.title}`,
+      body: `${exec.name} (${exec.badge}) changed status from ${fromLabel} → ${toLabel}.`,
+      url: '/executive-tasks',
+      metadata: { taskId: updated.id, from: existing.status, to: updated.status },
+    })
+  } else if (escalatedUrgent) {
+    await notifyExecutives({
+      actorId: exec.id,
+      actorName: exec.name,
+      actorBadge: exec.badge,
+      category: 'EXECUTIVE_TASK',
+      priority: 'URGENT',
+      eventKey: 'exec_task.escalated_urgent',
+      title: `URGENT Task Escalation: ${updated.title}`,
+      body: `${exec.name} (${exec.badge}) marked "${updated.title}" as URGENT priority.`,
+      url: '/executive-tasks',
+      metadata: { taskId: updated.id, priority: 'URGENT' },
+    })
+  } else if (!assigneeChanged) {
+    await notifyExecutives({
+      actorId: exec.id,
+      actorName: exec.name,
+      actorBadge: exec.badge,
+      category: 'EXECUTIVE_TASK',
+      priority: 'NORMAL',
+      eventKey: 'exec_task.updated',
+      title: `Task updated: ${updated.title}`,
+      body: `${exec.name} (${exec.badge}) updated details/checklist on "${updated.title}".`,
+      url: '/executive-tasks',
+      metadata: { taskId: updated.id },
+    })
+  }
+
   revalidatePath('/executive-tasks')
   return ok(serializeTask(updated, badgeMap))
 }
@@ -232,6 +357,20 @@ export async function deleteExecutiveTask(
   if (!existing) return fail('Task not found.')
 
   await prisma.executiveTask.delete({ where: { id } })
+
+  await notifyExecutives({
+    actorId: exec.id,
+    actorName: exec.name,
+    actorBadge: exec.badge,
+    category: 'EXECUTIVE_TASK',
+    priority: 'NORMAL',
+    eventKey: 'exec_task.deleted',
+    title: `Executive task deleted: ${existing.title}`,
+    body: `${exec.name} (${exec.badge}) removed "${existing.title}" from the Executive Board.`,
+    url: '/executive-tasks',
+    metadata: { deletedTaskId: id },
+  })
+
   revalidatePath('/executive-tasks')
   return ok({ deletedId: id })
 }
@@ -268,6 +407,24 @@ export async function addExecutiveTaskComment(
   })
 
   const badgeMap = await buildBadgeLookup()
+
+  const commentPreview = text
+    ? text.slice(0, 140)
+    : `Attached ${attachments.length} file${attachments.length > 1 ? 's' : ''}`
+
+  await notifyExecutives({
+    actorId: exec.id,
+    actorName: exec.name,
+    actorBadge: exec.badge,
+    category: 'EXECUTIVE_TASK',
+    priority: updated.priority === 'URGENT' ? 'URGENT' : 'HIGH',
+    eventKey: 'exec_task.commented',
+    title: `New note on "${updated.title}"`,
+    body: `${exec.name} (${exec.badge}): ${commentPreview}`,
+    url: '/executive-tasks',
+    metadata: { taskId: updated.id },
+  })
+
   revalidatePath('/executive-tasks')
   return ok(serializeTask(updated, badgeMap))
 }

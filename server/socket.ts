@@ -1,6 +1,18 @@
+import crypto from 'crypto'
 import http from 'http'
 import { Server, Socket } from 'socket.io'
 import { prisma } from '../lib/db'
+
+function getExpectedInternalSecret(): string {
+  const base =
+    process.env.AUTH_SECRET ||
+    process.env.NEXTAUTH_SECRET ||
+    'artyx-socket-bridge-secret'
+  return crypto
+    .createHash('sha256')
+    .update(`artyx-notify:${base}`)
+    .digest('hex')
+}
 
 export const SOCKET_PORT = process.env.SOCKET_PORT
   ? parseInt(process.env.SOCKET_PORT, 10)
@@ -36,12 +48,51 @@ export function initSocketServer(): Server | null {
       res.end(
         JSON.stringify({
           status: 'ok',
-          service: 'Artyx Team Chat Socket.io Server',
+          service: 'Artyx Team Chat & Real-Time Notifications Socket.io Server',
           port: SOCKET_PORT,
           onlineCount: onlineUsers.size,
           timestamp: new Date().toISOString(),
         })
       )
+      return
+    }
+
+    // Internal cross-process notification emission bridge
+    if (req.method === 'POST' && req.url === '/internal/notify') {
+      const providedSecret = req.headers['x-internal-secret']
+      if (providedSecret !== getExpectedInternalSecret()) {
+        res.writeHead(401, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: 'Unauthorized' }))
+        return
+      }
+
+      let rawBody = ''
+      req.on('data', (chunk) => {
+        rawBody += chunk
+        if (rawBody.length > 512 * 1024) {
+          req.destroy()
+        }
+      })
+      req.on('end', () => {
+        try {
+          const parsed = JSON.parse(rawBody) as {
+            deliveries?: Array<{ userId: string; event: string; payload: unknown }>
+          }
+          const ioInstance = globalForSocket.__artyxSocketIo
+          if (ioInstance && Array.isArray(parsed.deliveries)) {
+            for (const item of parsed.deliveries) {
+              if (item?.userId && item?.event) {
+                ioInstance.to(`user:${item.userId}`).emit(item.event, item.payload)
+              }
+            }
+          }
+          res.writeHead(200, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ ok: true }))
+        } catch {
+          res.writeHead(400, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'Invalid JSON payload' }))
+        }
+      })
       return
     }
 
@@ -183,6 +234,23 @@ export function initSocketServer(): Server | null {
             'new_message',
             formattedMessage
           )
+
+          // Dispatch executive / mention notifications + Web Push asynchronously
+          import('../lib/notifications/executive-notifier')
+            .then(({ notifyChatMessage }) =>
+              notifyChatMessage({
+                channelId: savedMessage.channelId,
+                senderId: savedMessage.user.id,
+                senderName: savedMessage.user.name,
+                senderImage: savedMessage.user.image,
+                content: savedMessage.content,
+                hasAttachment: Boolean(savedMessage.attachmentUrl),
+                attachmentName: savedMessage.attachmentName,
+              })
+            )
+            .catch((notifyErr) => {
+              console.warn('[Socket.io] Chat notification dispatch warning:', notifyErr)
+            })
 
           callback?.({ success: true, message: formattedMessage })
         } catch (err: unknown) {

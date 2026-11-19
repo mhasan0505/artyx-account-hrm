@@ -4,6 +4,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/db'
 import { Prisma } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
+import { notifyExecutives } from '@/lib/notifications/executive-notifier'
 
 export type InvoiceFilterParams = {
   search?: string
@@ -259,6 +260,18 @@ export async function createAgencyInvoice(data: {
     return inv
   })
 
+  await notifyExecutives({
+    actorId: session.user.id,
+    actorName: session.user.name,
+    category: 'INVOICE',
+    priority: 'NORMAL',
+    eventKey: 'invoice.created',
+    title: `Invoice ${newInvoice.invoiceNumber} Issued`,
+    body: `৳${Number(newInvoice.totalAmount).toLocaleString()} billed to ${newInvoice.client.companyName} by ${session.user.name || 'Executive'}.`,
+    url: `/invoices/${newInvoice.id}`,
+    metadata: { invoiceId: newInvoice.id, clientId: data.clientId },
+  })
+
   revalidatePath('/invoices')
   revalidatePath('/clients')
   revalidatePath(`/clients/${data.clientId}`)
@@ -385,6 +398,18 @@ export async function recordAgencyPayment(data: {
     }
 
     return { payment, newStatus }
+  })
+
+  await notifyExecutives({
+    actorId: session.user.id,
+    actorName: session.user.name,
+    category: 'PAYMENT',
+    priority: 'HIGH',
+    eventKey: 'invoice.payment_received',
+    title: `Payment Received: ৳${payAmount.toLocaleString()}`,
+    body: `${invoice.client.companyName} paid via ${data.paymentMethod} for ${invoice.invoiceNumber} (${result.newStatus}) — logged by ${session.user.name || 'Executive'}.`,
+    url: `/invoices/${data.invoiceId}`,
+    metadata: { invoiceId: data.invoiceId, paymentNumber },
   })
 
   revalidatePath('/invoices')

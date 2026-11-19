@@ -2,7 +2,11 @@
 
 import { requireAuth } from '@/lib/actions/auth-guard'
 import { prisma } from '@/lib/db'
-import { UserRole } from '@prisma/client'
+import type {
+  ExecutiveNotificationDTO,
+  NotificationCategoryType,
+  NotificationPriorityType,
+} from '@/lib/notifications/types'
 
 export interface HeaderNotificationItem {
   id: string
@@ -38,123 +42,271 @@ function formatRelativeTime(date: Date): string {
   return `${diffDays}d ago`
 }
 
+function serializeNotification(n: {
+  id: string
+  recipientId: string
+  actorId: string | null
+  actorName: string | null
+  actorBadge: string | null
+  actorImage: string | null
+  category: string
+  priority: string
+  eventKey: string
+  title: string
+  body: string
+  url: string
+  metadata: unknown
+  isRead: boolean
+  readAt: Date | null
+  createdAt: Date
+}): ExecutiveNotificationDTO {
+  return {
+    id: n.id,
+    recipientId: n.recipientId,
+    actorId: n.actorId,
+    actorName: n.actorName,
+    actorBadge: n.actorBadge,
+    actorImage: n.actorImage,
+    category: n.category as NotificationCategoryType,
+    priority: n.priority as NotificationPriorityType,
+    eventKey: n.eventKey,
+    title: n.title,
+    body: n.body,
+    url: n.url,
+    metadata: (n.metadata as Record<string, unknown> | null) || null,
+    isRead: n.isRead,
+    readAt: n.readAt ? n.readAt.toISOString() : null,
+    createdAt: n.createdAt.toISOString(),
+    tag: `artyx-notif-${n.id}`,
+    requireInteraction: n.priority === 'URGENT' || n.priority === 'HIGH',
+  }
+}
+
 /**
- * Fetches relevant agency accounting notifications for Artyx Digital ERP.
+ * Fetches the authenticated user's persistent executive/team notification inbox
+ * plus live unread count.
+ */
+export async function getUserNotificationsInbox(limit = 40): Promise<{
+  unreadCount: number
+  notifications: ExecutiveNotificationDTO[]
+  serverTime: string
+}> {
+  try {
+    const user = await requireAuth()
+
+    const [rows, unreadCount] = await Promise.all([
+      prisma.userNotification.findMany({
+        where: { recipientId: user.id },
+        orderBy: { createdAt: 'desc' },
+        take: Math.min(Math.max(limit, 5), 100),
+      }),
+      prisma.userNotification.count({
+        where: { recipientId: user.id, isRead: false },
+      }),
+    ])
+
+    const items = rows.map(serializeNotification)
+
+    // Also include active overdue invoices as subtle read-only reminders if user has few alerts
+    if (items.length < 15) {
+      const overdueInvoices = await prisma.agencyInvoice.findMany({
+        where: {
+          status: { in: ['OVERDUE', 'SENT', 'PARTIAL', 'PARTIALLY_PAID'] },
+          dueDate: { lt: new Date() },
+          dueAmount: { gt: 0 },
+        },
+        orderBy: { dueDate: 'asc' },
+        take: 4,
+        include: {
+          client: { select: { companyName: true } },
+        },
+      })
+
+      for (const inv of overdueInvoices) {
+        const amount = Number(inv.dueAmount).toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
+        items.push({
+          id: `synthetic-overdue-${inv.id}`,
+          recipientId: user.id,
+          actorId: null,
+          actorName: 'Billing Monitor',
+          actorBadge: 'SYSTEM',
+          actorImage: null,
+          category: 'INVOICE',
+          priority: 'HIGH',
+          eventKey: 'invoice.overdue_reminder',
+          title: `Overdue Invoice: ${inv.invoiceNumber}`,
+          body: `৳ ${amount} due from ${inv.client.companyName}`,
+          url: `/invoices/${inv.id}`,
+          metadata: { invoiceId: inv.id },
+          isRead: true,
+          readAt: null,
+          createdAt: inv.dueDate.toISOString(),
+          isSynthetic: true,
+        })
+      }
+    }
+
+    return {
+      unreadCount,
+      notifications: items,
+      serverTime: new Date().toISOString(),
+    }
+  } catch (err) {
+    console.error('[NotificationsInbox] Error fetching inbox:', err)
+    return {
+      unreadCount: 0,
+      notifications: [],
+      serverTime: new Date().toISOString(),
+    }
+  }
+}
+
+/**
+ * Lightweight polling endpoint used ONLY as a resilient fallback when Socket.io is offline.
+ * Returns notifications created strictly after `sinceIso`.
+ */
+export async function pollNewNotifications(sinceIso: string): Promise<{
+  notifications: ExecutiveNotificationDTO[]
+  unreadCount: number
+  serverTime: string
+}> {
+  try {
+    const user = await requireAuth()
+    const sinceDate = new Date(sinceIso)
+    if (Number.isNaN(sinceDate.getTime())) {
+      return { notifications: [], unreadCount: 0, serverTime: new Date().toISOString() }
+    }
+
+    const [rows, unreadCount] = await Promise.all([
+      prisma.userNotification.findMany({
+        where: {
+          recipientId: user.id,
+          createdAt: { gt: sinceDate },
+        },
+        orderBy: { createdAt: 'asc' },
+        take: 15,
+      }),
+      prisma.userNotification.count({
+        where: { recipientId: user.id, isRead: false },
+      }),
+    ])
+
+    return {
+      notifications: rows.map(serializeNotification),
+      unreadCount,
+      serverTime: new Date().toISOString(),
+    }
+  } catch {
+    return {
+      notifications: [],
+      unreadCount: 0,
+      serverTime: new Date().toISOString(),
+    }
+  }
+}
+
+export async function markNotificationAsRead(notificationId: string): Promise<{
+  success: boolean
+}> {
+  try {
+    const user = await requireAuth()
+    if (!notificationId || notificationId.startsWith('synthetic-')) {
+      return { success: true }
+    }
+
+    await prisma.userNotification.updateMany({
+      where: {
+        id: notificationId,
+        recipientId: user.id,
+        isRead: false,
+      },
+      data: {
+        isRead: true,
+        readAt: new Date(),
+      },
+    })
+
+    return { success: true }
+  } catch (err) {
+    console.error('[NotificationsInbox] Error marking read:', err)
+    return { success: false }
+  }
+}
+
+export async function markAllNotificationsAsRead(): Promise<{
+  success: boolean
+}> {
+  try {
+    const user = await requireAuth()
+    await prisma.userNotification.updateMany({
+      where: {
+        recipientId: user.id,
+        isRead: false,
+      },
+      data: {
+        isRead: true,
+        readAt: new Date(),
+      },
+    })
+    return { success: true }
+  } catch (err) {
+    console.error('[NotificationsInbox] Error marking all read:', err)
+    return { success: false }
+  }
+}
+
+export async function deleteUserNotification(notificationId: string): Promise<{
+  success: boolean
+}> {
+  try {
+    const user = await requireAuth()
+    if (!notificationId || notificationId.startsWith('synthetic-')) {
+      return { success: true }
+    }
+    await prisma.userNotification.deleteMany({
+      where: {
+        id: notificationId,
+        recipientId: user.id,
+      },
+    })
+    return { success: true }
+  } catch (err) {
+    console.error('[NotificationsInbox] Error deleting notification:', err)
+    return { success: false }
+  }
+}
+
+/**
+ * Legacy compatibility feed helper.
  */
 export async function getHeaderNotificationsFeed(): Promise<{
   unreadCount: number
   notifications: HeaderNotificationItem[]
 }> {
   try {
-    await requireAuth()
-
-    const notifications: HeaderNotificationItem[] = []
-
-    // 1. Fetch recent or overdue agency invoices
-    const overdueInvoices = await prisma.agencyInvoice.findMany({
-      where: {
-        status: { in: ['OVERDUE', 'SENT', 'PARTIALLY_PAID'] },
-        dueDate: { lt: new Date() },
-      },
-      orderBy: { dueDate: 'asc' },
-      take: 5,
-      include: {
-        client: { select: { companyName: true, clientCode: true } },
-      },
-    })
-
-    overdueInvoices.forEach(inv => {
-      const amount = Number(inv.totalAmount).toLocaleString('en-US', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })
-      notifications.push({
-        id: `invoice-overdue-${inv.id}`,
-        title: `Overdue Invoice: ${inv.invoiceNumber}`,
-        description: `৳ ${amount} due from ${inv.client.companyName}`,
-        type: 'INVOICE',
-        timestamp: inv.dueDate.toISOString(),
-        timeAgo: formatRelativeTime(inv.dueDate),
-        url: `/invoices/${inv.id}`,
-      })
-    })
-
-    // 2. Fetch recent paid/sent invoices (last 5)
-    const recentInvoices = await prisma.agencyInvoice.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 5,
-      include: {
-        client: { select: { companyName: true } },
-      },
-    })
-
-    recentInvoices.forEach(inv => {
-      if (overdueInvoices.some(o => o.id === inv.id)) return // skip duplicates
-      const amount = Number(inv.totalAmount).toLocaleString('en-US', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })
-      notifications.push({
-        id: `invoice-${inv.id}`,
-        title: `Invoice #${inv.invoiceNumber} (${inv.status})`,
-        description: `৳ ${amount} • ${inv.client.companyName}`,
-        type: 'INVOICE',
-        timestamp: inv.createdAt.toISOString(),
-        timeAgo: formatRelativeTime(inv.createdAt),
-        url: `/invoices/${inv.id}`,
-      })
-    })
-
-    // 3. Fetch pending expenses
-    const pendingExpenses = await prisma.expense.findMany({
-      where: { status: 'PENDING' },
-      orderBy: { expenseDate: 'desc' },
-      take: 5,
-    })
-
-    pendingExpenses.forEach(exp => {
-      const amount = Number(exp.amount).toLocaleString('en-US', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })
-      notifications.push({
-        id: `expense-${exp.id}`,
-        title: `Pending Expense Approval`,
-        description: `৳ ${amount} • ${exp.description.slice(0, 45)}`,
-        type: 'EXPENSE',
-        timestamp: exp.createdAt.toISOString(),
-        timeAgo: formatRelativeTime(exp.createdAt),
-        url: '/expenses',
-      })
-    })
-
-    // 4. Fetch recent clients
-    const recentClients = await prisma.agencyClient.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 3,
-      select: { id: true, companyName: true, clientCode: true, createdAt: true },
-    })
-
-    recentClients.forEach(c => {
-      notifications.push({
-        id: `client-${c.id}`,
-        title: `New Client: ${c.companyName}`,
-        description: `Client Code: ${c.clientCode}`,
-        type: 'CLIENT',
-        timestamp: c.createdAt.toISOString(),
-        timeAgo: formatRelativeTime(c.createdAt),
-        url: `/clients/${c.id}`,
-      })
-    })
-
-    // Sort by timestamp descending
-    notifications.sort(
-      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    )
-
+    const inbox = await getUserNotificationsInbox(20)
     return {
-      unreadCount: Math.min(notifications.length, 99),
-      notifications: notifications.slice(0, 15),
+      unreadCount: inbox.unreadCount,
+      notifications: inbox.notifications.map((n) => ({
+        id: n.id,
+        title: n.title,
+        description: n.body,
+        type:
+          n.category === 'INVOICE' || n.category === 'PAYMENT'
+            ? 'INVOICE'
+            : n.category === 'EXPENSE'
+              ? 'EXPENSE'
+              : n.category === 'CLIENT' || n.category === 'PROJECT'
+                ? 'CLIENT'
+                : 'SYSTEM',
+        timestamp: n.createdAt,
+        timeAgo: formatRelativeTime(new Date(n.createdAt)),
+        url: n.url,
+        isRead: n.isRead,
+      })),
     }
   } catch (err) {
     console.error('[HeaderFeed] Error fetching notifications feed:', err)

@@ -6,6 +6,7 @@ import {
 } from '@/lib/actions/auth-guard'
 import { fail, ok } from '@/lib/actions/result'
 import { logAuditDirect } from '@/lib/audit/logger'
+import { notifyExecutives } from '@/lib/notifications/executive-notifier'
 import { prisma, withDatabaseReadFallback } from '@/lib/db'
 import {
   AccountType,
@@ -800,7 +801,7 @@ export async function recordPayrollPayment(data: {
       })
     }
 
-    return { payment, updatedEntry }
+    return { payment, updatedEntry, employeeName: entry.employee.name }
   })
 
   await logAuditDirect(
@@ -815,10 +816,22 @@ export async function recordPayrollPayment(data: {
     }
   )
 
+  await notifyExecutives({
+    actorId: user.id,
+    actorName: user.name,
+    category: 'PAYROLL',
+    priority: 'NORMAL',
+    eventKey: 'payroll.payment_recorded',
+    title: `Payroll Payment: ৳${Number(data.amount).toLocaleString()}`,
+    body: `Salary disbursement for ${result.employeeName} via ${data.method} — logged by ${user.name || 'Executive'}.`,
+    url: '/hr/payroll',
+    metadata: { paymentId: result.payment.id, payrollEntryId: data.payrollEntryId },
+  })
+
   safeRevalidate('/hr/payroll')
   safeRevalidate('/finances')
   safeRevalidate('/expenses')
-  return ok(result)
+  return ok({ payment: result.payment, updatedEntry: result.updatedEntry })
 }
 
 // ─────────────────────────────────────────────

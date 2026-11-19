@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { UserRole } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { logAudit } from "@/lib/audit/logger";
+import { notifyExecutives } from "@/lib/notifications/executive-notifier";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -91,6 +92,18 @@ export async function createUser(formData: FormData) {
     role: user.role,
     customRoleId: parsed.data.customRoleId,
     outletId: user.outletId,
+  });
+
+  await notifyExecutives({
+    actorId: me.id,
+    actorName: me.name,
+    category: 'SECURITY',
+    priority: 'NORMAL',
+    eventKey: 'user.created',
+    title: `New Team Member Created: ${user.name}`,
+    body: `${me.name || 'Executive'} added ${user.name} (${user.role}) — ${user.email}.`,
+    url: '/users',
+    metadata: { targetUserId: user.id, role: user.role },
   });
 
   revalidatePath("/users");
@@ -182,6 +195,18 @@ export async function toggleUserActive(id: string) {
     targetRole: user.role,
   });
 
+  await notifyExecutives({
+    actorId: me.id,
+    actorName: me.name,
+    category: 'SECURITY',
+    priority: 'HIGH',
+    eventKey: 'user.status_toggled',
+    title: `User Account ${updated.isActive ? 'Activated' : 'Deactivated'}`,
+    body: `${me.name || 'Executive'} ${updated.isActive ? 'activated' : 'deactivated'} ${updated.name} (${user.role}).`,
+    url: '/users',
+    metadata: { targetUserId: updated.id, isActive: updated.isActive },
+  });
+
   revalidatePath("/users");
   return ok({ id: updated.id, isActive: updated.isActive });
 }
@@ -229,6 +254,18 @@ export async function deleteUser(id: string) {
   await logAudit("USER_DELETE", "User", id, {
     targetUserRole: targetUser.role,
     targetUserOutletId: targetUser.outletId,
+  });
+
+  await notifyExecutives({
+    actorId: me.id,
+    actorName: me.name,
+    category: 'SECURITY',
+    priority: 'HIGH',
+    eventKey: 'user.deleted',
+    title: `User Account Deleted`,
+    body: `${me.name || 'Executive'} permanently deleted a ${targetUser.role} account.`,
+    url: '/users',
+    metadata: { deletedUserId: id, targetRole: targetUser.role },
   });
 
   revalidatePath("/users");

@@ -8,6 +8,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { DRAWER_TX_TYPE, BANK_TX_REF_TYPE } from '@/lib/constants/transaction-types'
 import { assertBalancedJournal } from '@/lib/accounting/journal'
+import { dispatchNotification, notifyExecutives } from '@/lib/notifications/executive-notifier'
 
 export type PrismaTx = Omit<
   typeof prisma,
@@ -105,6 +106,20 @@ export async function createContraTransfer(
       notes: notes || null,
     },
   })
+
+  if (!tx) {
+    await notifyExecutives({
+      actorId: user.id,
+      actorName: user.name,
+      category: 'FINANCE',
+      priority: 'HIGH',
+      eventKey: 'transfer.created',
+      title: `Contra Transfer Pending: ৳${Number(amount).toLocaleString()}`,
+      body: `${type.replace(/_/g, ' ')} requested by ${user.name || 'Executive'}${notes ? ` — ${notes}` : ''}.`,
+      url: '/finances/transfers',
+      metadata: { transferId: transfer.id },
+    })
+  }
 
   revalidatePath('/finances/transfers')
   return ok(transfer)
@@ -400,6 +415,22 @@ export async function approveContraTransfer(
       result = await prisma.$transaction(async innerTx => await executeApproval(innerTx))
     }
 
+    if (!tx && result) {
+      await dispatchNotification({
+        actorId: user.id,
+        actorName: user.name,
+        recipientIds: result.createdById ? [result.createdById] : [],
+        notifyAllExecutives: true,
+        category: 'FINANCE',
+        priority: 'NORMAL',
+        eventKey: 'transfer.approved',
+        title: `Contra Transfer Approved: ৳${Number(result.amount).toLocaleString()}`,
+        body: `${user.name || 'Executive'} approved ${String(result.type).replace(/_/g, ' ')}.`,
+        url: '/finances/transfers',
+        metadata: { transferId },
+      })
+    }
+
     revalidatePath('/finances/transfers')
     revalidatePath('/finances/banks')
     revalidatePath('/finances/drawer')
@@ -456,6 +487,22 @@ export async function rejectContraTransfer(
         : transfer.notes,
     },
   })
+
+  if (!tx) {
+    await dispatchNotification({
+      actorId: user.id,
+      actorName: user.name,
+      recipientIds: transfer.createdById ? [transfer.createdById] : [],
+      notifyAllExecutives: true,
+      category: 'FINANCE',
+      priority: 'NORMAL',
+      eventKey: 'transfer.rejected',
+      title: `Contra Transfer Rejected: ৳${Number(transfer.amount).toLocaleString()}`,
+      body: `${user.name || 'Executive'} rejected ${transfer.type.replace(/_/g, ' ')}${reason ? ` (${reason})` : ''}.`,
+      url: '/finances/transfers',
+      metadata: { transferId },
+    })
+  }
 
   revalidatePath('/finances/transfers')
   return ok(updatedTransfer)

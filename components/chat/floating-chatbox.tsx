@@ -14,6 +14,7 @@ import {
   sendChatMessage,
 } from '@/lib/actions/team-chat'
 import { useSocketChat, type ChatMessage } from '@/lib/hooks/use-socket'
+import { useNotificationStore } from '@/lib/stores/notifications'
 import { cn } from '@/lib/utils'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -84,9 +85,19 @@ export function FloatingChatbox() {
     sendMessage: sendViaSocket,
   } = useSocketChat(activeChannelId)
 
-  // Listen to custom header trigger event
+  const setChatboxOpen = useNotificationStore(s => s.setChatboxOpen)
+
   useEffect(() => {
-    const handleOpenChat = () => {
+    setChatboxOpen(isOpen)
+  }, [isOpen, setChatboxOpen])
+
+  // Listen to custom header / notification trigger event
+  useEffect(() => {
+    const handleOpenChat = (event: Event) => {
+      const custom = event as CustomEvent<{ channelId?: string | null }>
+      if (custom.detail?.channelId) {
+        setActiveChannelId(custom.detail.channelId)
+      }
       setIsOpen(true)
       setIsMinimized(false)
       setUnreadCount(0)

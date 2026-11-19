@@ -4,6 +4,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/db'
 import { Prisma, TaskPriority, TaskStatus } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
+import { dispatchNotification } from '@/lib/notifications/executive-notifier'
 
 const WORK_HOURS_PER_MONTH = 176
 
@@ -229,6 +230,21 @@ export async function createTask(input: CreateTaskInput) {
       orderIndex: (last?.orderIndex ?? -1) + 1,
     },
   })
+  if (task.assigneeId && task.assigneeId !== user.id) {
+    await dispatchNotification({
+      actorId: user.id,
+      actorName: user.name,
+      recipientIds: [task.assigneeId],
+      category: 'PROJECT',
+      priority: task.priority === 'URGENT' ? 'URGENT' : 'HIGH',
+      eventKey: 'project_task.assigned',
+      title: `New Project Task: ${task.title}`,
+      body: `${user.name || 'Team member'} assigned you ${task.taskCode} (${task.priority.toLowerCase()} priority).`,
+      url: `/projects/${input.projectId}`,
+      metadata: { taskId: task.id, projectId: input.projectId },
+    })
+  }
+
   refresh(input.projectId)
   return { success: true as const, id: task.id }
 }
@@ -246,7 +262,11 @@ export type UpdateTaskInput = {
 }
 
 export async function updateTask(taskId: string, input: UpdateTaskInput) {
-  await requireUser()
+  const user = await requireUser()
+  const existing = await prisma.projectTask.findUnique({
+    where: { id: taskId },
+    select: { title: true, status: true, assigneeId: true, creatorId: true, projectId: true, taskCode: true },
+  })
   const data: Prisma.ProjectTaskUncheckedUpdateInput = {}
   if (input.title !== undefined) {
     if (!input.title.trim()) throw new Error('Task title is required')
@@ -262,16 +282,43 @@ export async function updateTask(taskId: string, input: UpdateTaskInput) {
   if (input.estimatedHours !== undefined) data.estimatedHours = input.estimatedHours
 
   const task = await prisma.projectTask.update({ where: { id: taskId }, data })
+
+  if (existing) {
+    const notifyIds = new Set<string>()
+    if (task.assigneeId && task.assigneeId !== user.id) notifyIds.add(task.assigneeId)
+    if (existing.creatorId && existing.creatorId !== user.id) notifyIds.add(existing.creatorId)
+
+    const reassigned = input.assigneeId !== undefined && existing.assigneeId !== task.assigneeId
+    const statusChanged = input.status !== undefined && existing.status !== task.status
+
+    if (notifyIds.size > 0 && (reassigned || statusChanged)) {
+      await dispatchNotification({
+        actorId: user.id,
+        actorName: user.name,
+        recipientIds: Array.from(notifyIds),
+        category: 'PROJECT',
+        priority: task.status === 'DONE' || task.status === 'IN_REVIEW' || reassigned ? 'HIGH' : 'NORMAL',
+        eventKey: reassigned ? 'project_task.reassigned' : 'project_task.status_changed',
+        title: reassigned
+          ? `Task assigned: ${task.title}`
+          : `Task moved to ${task.status.replace('_', ' ')}: ${task.title}`,
+        body: `${user.name || 'Team member'} updated ${task.taskCode}.`,
+        url: `/projects/${task.projectId}`,
+        metadata: { taskId: task.id, projectId: task.projectId },
+      })
+    }
+  }
+
   refresh(task.projectId)
   return { success: true as const }
 }
 
 /** Drag-and-drop: move a task to a column at a given position and re-index that column. */
 export async function moveTask(taskId: string, status: TaskStatus, position: number) {
-  await requireUser()
+  const user = await requireUser()
   const task = await prisma.projectTask.findUniqueOrThrow({
     where: { id: taskId },
-    select: { projectId: true },
+    select: { projectId: true, title: true, taskCode: true, status: true, assigneeId: true, creatorId: true },
   })
 
   const column = await prisma.projectTask.findMany({
@@ -288,6 +335,28 @@ export async function moveTask(taskId: string, status: TaskStatus, position: num
       prisma.projectTask.update({ where: { id }, data: { orderIndex: index } })
     ),
   ])
+
+  if (task.status !== status) {
+    const notifyIds = [task.assigneeId, task.creatorId].filter(
+      (id): id is string => Boolean(id && id !== user.id)
+    )
+    if (notifyIds.length > 0 || status === 'DONE' || status === 'IN_REVIEW') {
+      await dispatchNotification({
+        actorId: user.id,
+        actorName: user.name,
+        recipientIds: notifyIds,
+        notifyAllExecutives: status === 'DONE' || status === 'IN_REVIEW',
+        category: 'PROJECT',
+        priority: status === 'DONE' || status === 'IN_REVIEW' ? 'HIGH' : 'NORMAL',
+        eventKey: 'project_task.moved',
+        title: `Project Task ${status.replace('_', ' ')}: ${task.title}`,
+        body: `${user.name || 'Team member'} moved ${task.taskCode} to ${status.replace('_', ' ')}.`,
+        url: `/projects/${task.projectId}`,
+        metadata: { taskId, projectId: task.projectId, status },
+      })
+    }
+  }
+
   refresh(task.projectId)
   return { success: true as const }
 }
@@ -361,9 +430,28 @@ export async function addTaskComment(taskId: string, content: string) {
   if (!content.trim()) throw new Error('Comment cannot be empty')
   const task = await prisma.projectTask.findUniqueOrThrow({
     where: { id: taskId },
-    select: { projectId: true },
+    select: { projectId: true, title: true, taskCode: true, assigneeId: true, creatorId: true },
   })
   await prisma.taskComment.create({ data: { taskId, userId: user.id, content: content.trim() } })
+
+  const notifyIds = [task.assigneeId, task.creatorId].filter(
+    (id): id is string => Boolean(id && id !== user.id)
+  )
+  if (notifyIds.length > 0) {
+    await dispatchNotification({
+      actorId: user.id,
+      actorName: user.name,
+      recipientIds: notifyIds,
+      category: 'PROJECT',
+      priority: 'NORMAL',
+      eventKey: 'project_task.commented',
+      title: `Comment on ${task.taskCode}: ${task.title}`,
+      body: `${user.name || 'Team member'}: ${content.trim().slice(0, 140)}`,
+      url: `/projects/${task.projectId}`,
+      metadata: { taskId, projectId: task.projectId },
+    })
+  }
+
   refresh(task.projectId)
   return { success: true as const }
 }

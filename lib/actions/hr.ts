@@ -7,6 +7,7 @@ import { logAuditDirect } from "@/lib/audit/logger";
 import { AttendanceStatus, LeaveStatus, UserRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { dispatchNotification, notifyExecutives } from "@/lib/notifications/executive-notifier";
 
 // ─── Employee ────────────────────────────────────────────────────────────────
 
@@ -373,6 +374,19 @@ export async function createLeaveRequest(data: z.infer<typeof leaveSchema>) {
   const req = await prisma.leaveRequest.create({
     data: { ...parsed.data, days, userId: user.id },
   });
+
+  await notifyExecutives({
+    actorId: user.id,
+    actorName: user.name,
+    category: 'HR',
+    priority: 'NORMAL',
+    eventKey: 'hr.leave_requested',
+    title: `Leave Request (${days} day${days > 1 ? 's' : ''})`,
+    body: `${user.name || 'Team member'} submitted a leave request awaiting approval.`,
+    url: '/hr/leaves',
+    metadata: { requestId: req.id, days },
+  });
+
   revalidatePath("/users");
   return ok(req);
 }
@@ -458,6 +472,22 @@ export async function approveLeaveRequest(requestId: string) {
         where: { id: requestId },
         data: { status: LeaveStatus.APPROVED },
       });
+    });
+
+    await dispatchNotification({
+      actorId: user.id,
+      actorName: user.name,
+      recipientIds: [existing.userId, existing.employee?.userId].filter(
+        (id): id is string => Boolean(id)
+      ),
+      notifyAllExecutives: true,
+      category: 'HR',
+      priority: 'NORMAL',
+      eventKey: 'hr.leave_approved',
+      title: `Leave Request Approved`,
+      body: `${user.name || 'Executive'} approved a ${existing.days || 1}-day leave request.`,
+      url: '/hr/leaves',
+      metadata: { requestId },
     });
 
     revalidatePath("/users");

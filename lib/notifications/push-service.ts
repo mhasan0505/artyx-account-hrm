@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db'
-import { getWebPush } from './vapid'
+import { getWebPushAsync } from './vapid'
 import { UserRole } from '@prisma/client'
 
 export interface NotifyUsersParams {
@@ -45,8 +45,8 @@ export async function notifyUsers(params: NotifyUsersParams): Promise<NotifyUser
     cooldownKey,
     cooldownMinutes = 60,
     tag,
-    icon = '/favicon.ico',
-    badge = '/favicon.ico',
+    icon = '/artyx-logo.png',
+    badge = '/artyx-logo.png',
     requireInteraction = false,
   } = params
 
@@ -165,7 +165,7 @@ export async function notifyUsers(params: NotifyUsersParams): Promise<NotifyUser
   // 3. Prepare Web Push Client and Payload
   let webpushClient
   try {
-    webpushClient = getWebPush()
+    webpushClient = await getWebPushAsync()
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err)
     console.error('[WebPush] Configuration error:', message)

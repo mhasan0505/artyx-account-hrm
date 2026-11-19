@@ -16,6 +16,7 @@ import {
   verifyUnlockToken,
 } from '@/lib/vault/crypto'
 import { generateTotpCode } from '@/lib/vault/totp'
+import { notifyExecutives } from '@/lib/notifications/executive-notifier'
 import type {
   VaultAuditEntry,
   VaultCategory,
@@ -572,6 +573,18 @@ export async function deleteVaultItem(id: string): Promise<ActionResult<{ delete
     category: existing.category,
   })
 
+  await notifyExecutives({
+    actorId: user.id,
+    actorName: user.name,
+    category: 'SECURITY',
+    priority: 'HIGH',
+    eventKey: 'vault.item_deleted',
+    title: `CEO Vault Item Deleted`,
+    body: `${user.name || 'Executive'} deleted "${existing.title}" (${existing.category}) from CEO Vault.`,
+    url: '/vault',
+    metadata: { deletedId: id },
+  })
+
   return ok({ deletedId: id })
 }
 
@@ -610,6 +623,18 @@ export async function exportEncryptedVaultBackup(
   const dateStr = new Date().toISOString().split('T')[0]
 
   await logVaultAudit(user.id!, 'VAULT_EXPORT', 'vault_backup', { count: decryptedItems.length })
+
+  await notifyExecutives({
+    actorId: user.id,
+    actorName: user.name,
+    category: 'SECURITY',
+    priority: 'URGENT',
+    eventKey: 'vault.backup_exported',
+    title: `CEO Vault Backup Exported`,
+    body: `${user.name || 'Executive'} exported an encrypted backup of ${decryptedItems.length} vault credentials.`,
+    url: '/vault',
+    metadata: { count: decryptedItems.length },
+  })
 
   return ok({
     filename: `artyx-ceo-vault-backup-${dateStr}.enc.json`,

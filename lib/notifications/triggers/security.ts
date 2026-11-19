@@ -1,4 +1,5 @@
 import { notifyUsers } from '@/lib/notifications/push-service'
+import { notifyExecutives } from '@/lib/notifications/executive-notifier'
 import { UserRole } from '@prisma/client'
 
 export interface CheckSecurityRejectionParams {
@@ -38,6 +39,21 @@ export async function checkAndNotifySecurityRejection(
         timestamp: new Date().toISOString(),
       },
     })
+
+    if (!res.suppressedByCooldown) {
+      await notifyExecutives({
+        actorId: userId,
+        actorName: displayName,
+        category: 'SECURITY',
+        priority: 'URGENT',
+        eventKey: 'security.unauthorized_attempt',
+        title: 'Security Alert: Unauthorized Action Attempt',
+        body: `"${displayName}" (${userRole}) attempted restricted action "${actionName}".`,
+        url: '/settings/audit-logs',
+        skipWebPush: res.sent > 0,
+        metadata: { userId, userRole, actionName },
+      })
+    }
 
     return {
       triggered: res.sent > 0 || !res.suppressedByCooldown,

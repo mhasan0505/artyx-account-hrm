@@ -5,6 +5,7 @@ import { fail, ok } from '@/lib/actions/result'
 import { logAuditDirect } from '@/lib/audit/logger'
 import { getLocalDateRangeBoundaries } from '@/lib/date-utils'
 import { checkAndNotifyDrawerVariance } from '@/lib/notifications/triggers/drawer-variance'
+import { dispatchNotification, notifyExecutives } from '@/lib/notifications/executive-notifier'
 import {
   getPrismaDatabaseErrorMessage,
   prisma,
@@ -874,7 +875,7 @@ export async function createExpense(data: z.infer<typeof expenseSchema>) {
   }
 
   try {
-    return await prisma.$transaction(async tx => {
+    const expense = await prisma.$transaction(async tx => {
       if (employee) {
         // 1. Ensure PayrollPeriod exists
         let period = await tx.payrollPeriod.findUnique({
@@ -1034,9 +1035,23 @@ export async function createExpense(data: z.infer<typeof expenseSchema>) {
         },
       })
 
-      safeRevalidatePath('/expenses')
-      return ok({ ...expense, amount: Number(expense.amount) })
+      return expense
     })
+
+    await notifyExecutives({
+      actorId: user.id,
+      actorName: user.name,
+      category: 'EXPENSE',
+      priority: 'HIGH',
+      eventKey: 'expense.created',
+      title: `Pending Expense: ৳${Number(expense.amount).toLocaleString()}`,
+      body: `${expense.description.slice(0, 120)} — submitted by ${user.name || 'Team member'} for approval.`,
+      url: '/expenses',
+      metadata: { expenseId: expense.id, amount: Number(expense.amount) },
+    })
+
+    safeRevalidatePath('/expenses')
+    return ok({ ...expense, amount: Number(expense.amount) })
   } catch (error: any) {
     return fail(error.message || 'An error occurred while creating expense')
   }
@@ -1318,6 +1333,20 @@ export async function approveExpense(expenseId: string) {
       expenseDate: expense.expenseDate.toISOString(),
     })
 
+    await dispatchNotification({
+      actorId: user.id,
+      actorName: user.name,
+      recipientIds: expense.createdById ? [expense.createdById] : [],
+      notifyAllExecutives: true,
+      category: 'EXPENSE',
+      priority: 'NORMAL',
+      eventKey: 'expense.approved',
+      title: `Expense Approved: ৳${Number(expense.amount).toLocaleString()}`,
+      body: `${user.name || 'Executive'} approved "${expense.description.slice(0, 100)}".`,
+      url: '/expenses',
+      metadata: { expenseId: expense.id },
+    })
+
     safeRevalidateTag(`dashboard-${expense.outletId}`)
     safeRevalidatePath('/', 'page')
     safeRevalidatePath('/expenses')
@@ -1359,6 +1388,20 @@ export async function rejectExpense(expenseId: string) {
       }
 
       return { ...current, status: ExpenseStatus.REJECTED }
+    })
+
+    await dispatchNotification({
+      actorId: user.id,
+      actorName: user.name,
+      recipientIds: expense.createdById ? [expense.createdById] : [],
+      notifyAllExecutives: true,
+      category: 'EXPENSE',
+      priority: 'NORMAL',
+      eventKey: 'expense.rejected',
+      title: `Expense Rejected: ৳${Number(expense.amount).toLocaleString()}`,
+      body: `${user.name || 'Executive'} rejected "${expense.description.slice(0, 100)}".`,
+      url: '/expenses',
+      metadata: { expenseId: expense.id },
     })
 
     safeRevalidateTag(`dashboard-${expense.outletId}`)

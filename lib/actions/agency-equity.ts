@@ -4,6 +4,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/db'
 import { Prisma } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
+import { notifyExecutives } from '@/lib/notifications/executive-notifier'
 
 // ─────────────────────────────────────────────
 // 1. OWNERS & EQUITY OVERVIEW
@@ -268,6 +269,18 @@ export async function recordOwnerDrawing(data: {
     return drawing
   })
 
+  await notifyExecutives({
+    actorId: session.user.id,
+    actorName: session.user.name,
+    category: 'EQUITY',
+    priority: 'HIGH',
+    eventKey: 'equity.drawing_recorded',
+    title: `Owner Drawing: ৳${drawAmount.toLocaleString()}`,
+    body: `${owner.name} (${drawingNumber}) via ${data.paymentMethod || 'BANK_TRANSFER'} — recorded by ${session.user.name || 'Executive'}.`,
+    url: '/equity/drawings',
+    metadata: { ownerId: data.ownerId, drawingNumber },
+  })
+
   revalidatePath('/equity')
   revalidatePath(`/equity/${data.ownerId}`)
   revalidatePath('/equity/drawings')
@@ -426,6 +439,18 @@ export async function createProfitDistributionBatch(data: {
     },
   })
 
+  await notifyExecutives({
+    actorId: session.user.id,
+    actorName: session.user.name,
+    category: 'EQUITY',
+    priority: 'HIGH',
+    eventKey: 'equity.distribution_created',
+    title: `Profit Distribution: ${batch.title}`,
+    body: `${batch.batchNumber} • Distributable profit ৳${preview.distributableProfit.toLocaleString()} created by ${session.user.name || 'Executive'}.`,
+    url: '/equity/distributions',
+    metadata: { batchId: batch.id, batchNumber: batch.batchNumber },
+  })
+
   revalidatePath('/equity')
   revalidatePath('/equity/distributions')
   return { success: true, batch }
@@ -514,6 +539,18 @@ export async function disburseOwnerProfitLine(data: {
         },
       })
     }
+  })
+
+  await notifyExecutives({
+    actorId: session.user.id,
+    actorName: session.user.name,
+    category: 'EQUITY',
+    priority: 'HIGH',
+    eventKey: 'equity.profit_disbursed',
+    title: `Profit Share Disbursed: ৳${Number(data.paidAmount).toLocaleString()}`,
+    body: `Paid to ${line.owner.name} (${line.batch.batchNumber}) via ${data.paymentMethod} — by ${session.user.name || 'Executive'}.`,
+    url: '/equity/distributions',
+    metadata: { lineId: data.lineId, ownerId: line.ownerId },
   })
 
   revalidatePath('/equity')

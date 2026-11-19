@@ -4,6 +4,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/db'
 import { revalidatePath } from 'next/cache'
 import { getSocketIo } from '@/server/socket'
+import { notifyChatMessage } from '@/lib/notifications/executive-notifier'
 
 const DEFAULT_CHANNELS = [
   {
@@ -167,6 +168,17 @@ export async function sendChatMessage(data: {
       io.to(`channel:${data.channelId}`).emit('new_message', formatted)
     }
   } catch {}
+
+  // Dispatch real-time pop-up & Web Push alerts to mentioned users & executives
+  void notifyChatMessage({
+    channelId: message.channelId,
+    senderId: message.user.id,
+    senderName: message.user.name,
+    senderImage: message.user.image,
+    content: message.content,
+    hasAttachment: Boolean(message.attachmentUrl),
+    attachmentName: message.attachmentName,
+  })
 
   revalidatePath('/team/chat')
   return formatted

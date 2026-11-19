@@ -6,6 +6,7 @@ import { prisma } from '@/lib/db'
 import { UserRole } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { assertBalancedJournal } from '@/lib/accounting/journal'
+import { dispatchNotification, notifyExecutives } from '@/lib/notifications/executive-notifier'
 
 export async function createCapitalInjection(data: {
   amount: number
@@ -30,6 +31,18 @@ export async function createCapitalInjection(data: {
       createdById: user.id,
       status: 'PENDING',
     },
+  })
+
+  await notifyExecutives({
+    actorId: user.id,
+    actorName: user.name,
+    category: 'FINANCE',
+    priority: 'HIGH',
+    eventKey: 'capital.created',
+    title: `Capital Injection Pending Approval`,
+    body: `৳${Number(data.amount).toLocaleString()} • ${data.description} — submitted by ${user.name || 'Executive'}.`,
+    url: '/finances/capital',
+    metadata: { capitalId: capitalInjection.id },
   })
 
   revalidatePath('/finances/capital')
@@ -145,6 +158,20 @@ export async function approveCapitalInjection(capitalId: string) {
       })
     })
 
+    await dispatchNotification({
+      actorId: user.id,
+      actorName: user.name,
+      recipientIds: [capital.createdById],
+      notifyAllExecutives: true,
+      category: 'FINANCE',
+      priority: 'HIGH',
+      eventKey: 'capital.approved',
+      title: `Capital Injection Approved: ৳${Number(capital.amount).toLocaleString()}`,
+      body: `${user.name || 'Executive'} approved capital injection "${capital.description}".`,
+      url: '/finances/capital',
+      metadata: { capitalId },
+    })
+
     revalidatePath('/finances/capital')
     revalidatePath('/finances/bank-accounts')
     return ok({ message: 'Capital injection approved successfully' })
@@ -180,6 +207,18 @@ export async function rejectCapitalInjection(capitalId: string) {
           approvedById: user.id,
         },
       })
+    })
+
+    await notifyExecutives({
+      actorId: user.id,
+      actorName: user.name,
+      category: 'FINANCE',
+      priority: 'NORMAL',
+      eventKey: 'capital.rejected',
+      title: `Capital Injection Rejected`,
+      body: `${user.name || 'Executive'} rejected a pending capital injection.`,
+      url: '/finances/capital',
+      metadata: { capitalId },
     })
 
     revalidatePath('/finances/capital')

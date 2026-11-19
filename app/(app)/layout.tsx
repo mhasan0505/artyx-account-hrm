@@ -4,6 +4,7 @@ import { AppSidebar } from '@/components/app-sidebar'
 import { PosDashboardHeader } from '@/components/pos-dashboard-header'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { FloatingChatbox } from '@/components/chat/floating-chatbox'
+import { NotificationCenterProvider } from '@/components/notifications/notification-center-provider'
 import { prisma } from '@/lib/db'
 import { getPosContext } from '@/lib/pos-context'
 
@@ -52,6 +53,7 @@ export default async function AppLayout({
         <div className="flex flex-1 flex-col p-2 sm:p-4 print:block print:p-0 min-w-0 max-w-full overflow-x-hidden">
           {children}
         </div>
+        <NotificationCenterProvider />
         <FloatingChatbox />
       </SidebarInset>
     </SidebarProvider>
