@@ -1,3 +1,5 @@
+import { hasExecutiveTaskAccess } from './executive-roles'
+
 export type UserRoleString =
   | 'SUPER_ADMIN'
   | 'ADMIN'
@@ -147,6 +149,10 @@ export const ROUTE_ACCESS: Array<{ prefix: string; roles: UserRoleString[] }> = 
     roles: ['SUPER_ADMIN'],
   },
   {
+    prefix: '/executive-tasks',
+    roles: ['SUPER_ADMIN', 'ADMIN'],
+  },
+  {
     prefix: '/users',
     roles: ['SUPER_ADMIN', 'ADMIN'],
   },
@@ -193,6 +199,11 @@ export function canAccessRoute(
     const email = user?.email?.toLowerCase()
     const customRole = user?.customRole?.toUpperCase()
     return email === 'mhasan.coder@gmail.com' || customRole === 'CEO'
+  }
+
+  // Executive Tasks route: strictly ONLY Super Admin, CEO, COO, and CMO
+  if (cleanPath === '/executive-tasks' || cleanPath.startsWith('/executive-tasks/')) {
+    return hasExecutiveTaskAccess(role || user?.role, user?.customRole)
   }
 
   // Pick the rule with the longest matching prefix explicitly (don't rely on array order)

@@ -196,6 +196,11 @@ export const navData: NavSection[] = [
         icon: <Lock className="size-4 shrink-0 text-amber-400" />,
         url: '/vault',
       },
+      {
+        title: 'Executive Tasks',
+        icon: <CheckSquare className="size-4 shrink-0 text-sky-400" />,
+        url: '/executive-tasks',
+      },
     ],
   },
   {

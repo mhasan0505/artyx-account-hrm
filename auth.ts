@@ -2,6 +2,7 @@ import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import { authConfig } from './auth.config'
 import { authorizeUser } from '@/lib/auth/authorize'
+import { resolveUserCustomRole } from '@/lib/auth/executive-server'
 import { prisma } from '@/lib/db'
 
 export { authorizeUser }
@@ -57,6 +58,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.outletId = (token.outletId as string) || session.user.outletId
         session.user.outletName = (token.outletName as string) || session.user.outletName
         session.user.outletCode = (token.outletCode as string) || session.user.outletCode
+        if (session.user.id) {
+          try {
+            session.user.customRole = await resolveUserCustomRole(session.user.id)
+          } catch {
+            session.user.customRole = null
+          }
+        }
       }
       return session
     },
