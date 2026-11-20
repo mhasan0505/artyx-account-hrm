@@ -2734,9 +2734,14 @@ model AgencyOwner {
   id                     String                  @id @default(cuid())
   name                   String
   title                  String                  // e.g. "Managing Partner", "Chief Technology Officer"
+  stakeholderRole        String                  @default("PARTNER") // FOUNDER, MANAGING_PARTNER, PARTNER, EQUITY_PARTNER
   email                  String?                 @unique
   phone                  String?
-  equityPercentage       Decimal                 @db.Decimal(5, 2) // e.g. 40.00%
+  equityPercentage       Decimal                 @db.Decimal(6, 3) // e.g. 40.000%
+  shareCount             Int                     @default(0)
+  shareClass             String                  @default("COMMON") // COMMON, PREFERRED, CLASS_A, CLASS_B, ADVISOR
+  votingRights           Boolean                 @default(true)
+  vestingSchedule        String?                 // e.g. "4yr / 1yr cliff", "Fully Vested"
   joinDate               DateTime                @default(now())
   isActive               Boolean                 @default(true)
   initialCapital         Decimal                 @default(0) @db.Decimal(14, 2)
@@ -2750,6 +2755,75 @@ model AgencyOwner {
   drawings               OwnerDrawing[]
   distributions          OwnerDistributionLine[]
   ledger                 OwnerEquityLedger[]
+}
+
+model Shareholder {
+  id                String   @id @default(cuid())
+  name              String
+  email             String?
+  phone             String?
+  holderType        String   @default("FOUNDER") // FOUNDER, PARTNER, INVESTOR, ADVISOR, EMPLOYEE_ESOP, INSTITUTIONAL
+  shareClass        String   @default("COMMON")  // COMMON, PREFERRED, SEED_PREFERRED, CLASS_A, CLASS_B, ESOP
+  shareCount        Int      @default(0)
+  equityPercentage  Decimal  @db.Decimal(6, 3)
+  parValue          Decimal  @default(0) @db.Decimal(14, 2)
+  investedCapital   Decimal  @default(0) @db.Decimal(14, 2)
+  issueDate         DateTime @default(now())
+  vestingSchedule   String?
+  votingRights      Boolean  @default(true)
+  certificateNumber String?
+  isActive          Boolean  @default(true)
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([holderType, isActive])
+  @@index([shareClass])
+}
+
+model InvestorSegment {
+  id               String     @id @default(cuid())
+  name             String     @unique // e.g. "Angel Syndicate", "Seed VC", "Strategic Partners"
+  code             String?
+  description      String?
+  instrumentType   String     @default("EQUITY") // EQUITY, SAFE, CONVERTIBLE_NOTE, REVENUE_SHARE, DEBT
+  targetAllocation Decimal    @default(0) @db.Decimal(14, 2)
+  minTicketSize    Decimal    @default(0) @db.Decimal(14, 2)
+  equityPoolPct    Decimal    @default(0) @db.Decimal(5, 2)
+  priority         Int        @default(1)
+  isActive         Boolean    @default(true)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  investors        Investor[]
+
+  @@index([isActive, priority])
+}
+
+model Investor {
+  id               String           @id @default(cuid())
+  segmentId        String?
+  segment          InvestorSegment? @relation(fields: [segmentId], references: [id], onDelete: SetNull)
+  name             String
+  organization     String?
+  email            String?
+  phone            String?
+  investorType     String           @default("ANGEL")     // ANGEL, VC, STRATEGIC, FAMILY_OFFICE, SYNDICATE, CORPORATE
+  stage            String           @default("COMMITTED") // PROSPECT, PITCHED, DUE_DILIGENCE, COMMITTED, FUNDED, PASSED
+  instrument       String           @default("EQUITY")    // EQUITY, SAFE, CONVERTIBLE_NOTE, REVENUE_SHARE, DEBT
+  committedAmount  Decimal          @default(0) @db.Decimal(14, 2)
+  investedAmount   Decimal          @default(0) @db.Decimal(14, 2)
+  equityPercentage Decimal          @default(0) @db.Decimal(6, 3)
+  valuationCap     Decimal?         @db.Decimal(14, 2)
+  investedDate     DateTime?
+  boardSeat        Boolean          @default(false)
+  notes            String?
+  isActive         Boolean          @default(true)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@index([segmentId, stage])
+  @@index([isActive, stage])
 }
 
 model OwnerDrawing {

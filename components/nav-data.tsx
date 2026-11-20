@@ -207,6 +207,11 @@ export const navData: NavSection[] = [
         url: '/equity',
       },
       {
+        title: 'Shareholders & Investors',
+        icon: <Building2 className="size-4 shrink-0 text-lime-400" />,
+        url: '/equity/investors',
+      },
+      {
         title: 'Profit Share Distributions',
         icon: <Coins className="size-4 shrink-0 text-amber-400" />,
         url: '/equity/distributions',

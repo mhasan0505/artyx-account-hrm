@@ -36,7 +36,9 @@ export async function isCurrentUserCeo(): Promise<boolean> {
         if (
           role &&
           (role.name.toUpperCase() === "CEO" ||
-            role.name.toUpperCase().includes("CEO"))
+            role.name.toUpperCase().includes("CEO") ||
+            role.name.toUpperCase().includes("CHIEF EXECUTIVE") ||
+            role.name.toUpperCase().includes("CHEIF EXECUTIVE"))
         ) {
           return true;
         }

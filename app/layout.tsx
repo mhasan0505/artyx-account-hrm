@@ -8,7 +8,7 @@ import { GeistMono } from 'geist/font/mono'
 import { GeistSans } from 'geist/font/sans'
 
 export const metadata: Metadata = {
-  title: 'Artyx Digital || Agency Accounting & ERP',
+  title: 'Artyx Digital || Agency Financial Management platform',
   description:
     'Internal accounting, client management, real-time profitability, HR, and partner equity management platform for Artyx Digital.',
 }

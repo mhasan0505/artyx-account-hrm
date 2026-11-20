@@ -5,6 +5,19 @@ import { prisma } from '@/lib/db'
 import { Prisma } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { notifyExecutives } from '@/lib/notifications/executive-notifier'
+import { isCurrentUserCeo } from '@/lib/actions/money-management'
+
+async function assertCeoPower() {
+  const session = await auth()
+  if (!session?.user) {
+    throw new Error('Unauthorized')
+  }
+  const isCeo = await isCurrentUserCeo()
+  if (!isCeo) {
+    throw new Error('Forbidden: Only the CEO has authority to create, modify, or delete partners and equity allocations.')
+  }
+  return session.user
+}
 
 // ─────────────────────────────────────────────
 // 1. OWNERS & EQUITY OVERVIEW
@@ -57,7 +70,10 @@ export async function getAgencyOwners() {
     0
   )
 
+  const isCeo = await isCurrentUserCeo()
+
   return {
+    isCeo,
     owners,
     summary: {
       totalOwners: owners.length,
@@ -71,25 +87,32 @@ export async function getAgencyOwners() {
 }
 
 // ─────────────────────────────────────────────
-// 2. CREATE & UPDATE OWNER
+// 2. CREATE, UPDATE, REBALANCE & DELETE OWNER (CEO EXCLUSIVE)
 // ─────────────────────────────────────────────
 
 export async function createAgencyOwner(data: {
   name: string
   title: string
+  stakeholderRole?: string
   email?: string
   phone?: string
   equityPercentage: number
+  shareCount?: number
+  shareClass?: string
+  votingRights?: boolean
+  vestingSchedule?: string
   initialCapital?: number
   joinDate?: Date
   notes?: string
 }) {
-  const session = await auth()
-  if (!session?.user) {
-    throw new Error('Unauthorized')
+  await assertCeoPower()
+
+  const eqVal = Number(data.equityPercentage)
+  if (!Number.isFinite(eqVal) || eqVal < 0 || eqVal > 100) {
+    throw new Error('Equity percentage must be between 0% and 100%')
   }
 
-  const equityDec = new Prisma.Decimal(data.equityPercentage)
+  const equityDec = new Prisma.Decimal(eqVal)
   const capitalDec = new Prisma.Decimal(data.initialCapital || 0)
 
   const owner = await prisma.$transaction(async tx => {
@@ -97,9 +120,14 @@ export async function createAgencyOwner(data: {
       data: {
         name: data.name.trim(),
         title: data.title.trim(),
+        stakeholderRole: data.stakeholderRole || 'PARTNER',
         email: data.email?.trim() || null,
         phone: data.phone?.trim() || null,
         equityPercentage: equityDec,
+        shareCount: Math.max(0, Math.round(Number(data.shareCount) || 0)),
+        shareClass: data.shareClass || 'COMMON',
+        votingRights: data.votingRights ?? true,
+        vestingSchedule: data.vestingSchedule?.trim() || null,
         initialCapital: capitalDec,
         currentCapitalBalance: capitalDec,
         totalDrawings: new Prisma.Decimal(0),
@@ -128,6 +156,8 @@ export async function createAgencyOwner(data: {
   })
 
   revalidatePath('/equity')
+  revalidatePath('/equity/investors')
+  revalidatePath('/')
   return { success: true, owner }
 }
 
@@ -136,16 +166,27 @@ export async function updateAgencyOwner(
   data: Partial<{
     name: string
     title: string
+    stakeholderRole: string
     email: string
     phone: string
     equityPercentage: number
+    shareCount: number
+    shareClass: string
+    votingRights: boolean
+    vestingSchedule: string
+    initialCapital: number
+    currentCapitalBalance: number
     isActive: boolean
     notes: string
   }>
 ) {
-  const session = await auth()
-  if (!session?.user) {
-    throw new Error('Unauthorized')
+  await assertCeoPower()
+
+  if (data.equityPercentage !== undefined) {
+    const eqVal = Number(data.equityPercentage)
+    if (!Number.isFinite(eqVal) || eqVal < 0 || eqVal > 100) {
+      throw new Error('Equity percentage must be between 0% and 100%')
+    }
   }
 
   const updated = await prisma.agencyOwner.update({
@@ -153,10 +194,27 @@ export async function updateAgencyOwner(
     data: {
       ...(data.name ? { name: data.name.trim() } : {}),
       ...(data.title ? { title: data.title.trim() } : {}),
+      ...(data.stakeholderRole !== undefined
+        ? { stakeholderRole: data.stakeholderRole }
+        : {}),
       ...(data.email !== undefined ? { email: data.email?.trim() || null } : {}),
       ...(data.phone !== undefined ? { phone: data.phone?.trim() || null } : {}),
       ...(data.equityPercentage !== undefined
         ? { equityPercentage: new Prisma.Decimal(data.equityPercentage) }
+        : {}),
+      ...(data.shareCount !== undefined
+        ? { shareCount: Math.max(0, Math.round(Number(data.shareCount) || 0)) }
+        : {}),
+      ...(data.shareClass !== undefined ? { shareClass: data.shareClass } : {}),
+      ...(data.votingRights !== undefined ? { votingRights: data.votingRights } : {}),
+      ...(data.vestingSchedule !== undefined
+        ? { vestingSchedule: data.vestingSchedule?.trim() || null }
+        : {}),
+      ...(data.initialCapital !== undefined
+        ? { initialCapital: new Prisma.Decimal(data.initialCapital) }
+        : {}),
+      ...(data.currentCapitalBalance !== undefined
+        ? { currentCapitalBalance: new Prisma.Decimal(data.currentCapitalBalance) }
         : {}),
       ...(data.isActive !== undefined ? { isActive: data.isActive } : {}),
       ...(data.notes !== undefined ? { notes: data.notes?.trim() || null } : {}),
@@ -165,7 +223,66 @@ export async function updateAgencyOwner(
 
   revalidatePath('/equity')
   revalidatePath(`/equity/${id}`)
+  revalidatePath('/equity/investors')
+  revalidatePath('/')
   return { success: true, owner: updated }
+}
+
+export async function rebalancePartnerEquityAction(
+  allocations: Array<{ id: string; equityPercentage: number }>
+) {
+  await assertCeoPower()
+
+  if (!allocations.length) {
+    throw new Error('No partner allocations provided')
+  }
+
+  let total = 0
+  for (const item of allocations) {
+    const pct = Number(item.equityPercentage)
+    if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
+      throw new Error('Each partner equity percentage must be between 0% and 100%')
+    }
+    total += pct
+  }
+
+  if (total > 100.01) {
+    throw new Error(
+      `Total equity allocation (${total.toFixed(2)}%) cannot exceed 100%.`
+    )
+  }
+
+  await prisma.$transaction(async tx => {
+    for (const item of allocations) {
+      await tx.agencyOwner.update({
+        where: { id: item.id },
+        data: {
+          equityPercentage: new Prisma.Decimal(item.equityPercentage),
+        },
+      })
+    }
+  })
+
+  revalidatePath('/equity')
+  revalidatePath('/equity/investors')
+  revalidatePath('/')
+  return { success: true, totalEquity: Number(total.toFixed(3)) }
+}
+
+export async function deleteAgencyOwner(id: string) {
+  await assertCeoPower()
+
+  await prisma.$transaction(async tx => {
+    await tx.ownerDistributionLine.deleteMany({ where: { ownerId: id } })
+    await tx.ownerDrawing.deleteMany({ where: { ownerId: id } })
+    await tx.ownerEquityLedger.deleteMany({ where: { ownerId: id } })
+    await tx.agencyOwner.delete({ where: { id } })
+  })
+
+  revalidatePath('/equity')
+  revalidatePath('/equity/investors')
+  revalidatePath('/')
+  return { success: true }
 }
 
 // ─────────────────────────────────────────────

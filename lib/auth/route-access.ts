@@ -213,6 +213,20 @@ export function canAccessRoute(
   // Strip query parameters and trailing slashes for clean matching
   const cleanPath = pathname.split('?')[0].split('#')[0].replace(/\/+$/, '') || '/'
 
+  // CEO always has full access to Equity, Cap Table & Investors
+  if (cleanPath === '/equity' || cleanPath.startsWith('/equity/')) {
+    const email = user?.email?.toLowerCase()
+    const customRole = user?.customRole?.toUpperCase() || ''
+    if (
+      email === 'mhasan.coder@gmail.com' ||
+      customRole === 'CEO' ||
+      customRole.includes('CEO') ||
+      customRole.includes('CHIEF EXECUTIVE')
+    ) {
+      return true
+    }
+  }
+
   // CEO exclusive routes: strictly accessible only to CEO user
   if (
     cleanPath === '/money-management' ||

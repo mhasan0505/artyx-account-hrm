@@ -5,7 +5,7 @@ import { Pool } from 'pg'
 export const DATABASE_UNAVAILABLE_MESSAGE =
   'Database is currently unavailable. Please try again shortly.'
 
-const PRISMA_CLIENT_VERSION = '2026-phase3-strategy-v1'
+const PRISMA_CLIENT_VERSION = '2026-ceo-cap-table-v1'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
@@ -195,7 +195,10 @@ if (
   !('podTarget' in (globalForPrisma.prisma as unknown as Record<string, unknown>)) ||
   !('retainerEvent' in (globalForPrisma.prisma as unknown as Record<string, unknown>)) ||
   !('salesOpportunity' in (globalForPrisma.prisma as unknown as Record<string, unknown>)) ||
-  !('valuationProfile' in (globalForPrisma.prisma as unknown as Record<string, unknown>))
+  !('valuationProfile' in (globalForPrisma.prisma as unknown as Record<string, unknown>)) ||
+  !('shareholder' in (globalForPrisma.prisma as unknown as Record<string, unknown>)) ||
+  !('investorSegment' in (globalForPrisma.prisma as unknown as Record<string, unknown>)) ||
+  !('investor' in (globalForPrisma.prisma as unknown as Record<string, unknown>))
 ) {
   globalForPrisma.prisma = createPrismaClient()
   globalForPrisma.prismaVersion = PRISMA_CLIENT_VERSION
