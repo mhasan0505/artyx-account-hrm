@@ -362,6 +362,9 @@ model User {
   notificationPreference    NotificationPreference?
   grnsReceived              GoodsReceivedNote[]      @relation("UserGrnsReceived")
   purchasePaymentsCancelled PurchasePayment[]        @relation("PurchasePaymentCanceller")
+  journalEntriesCreated     JournalEntry[]           @relation("JournalEntryCreator")
+  journalEntriesVoided      JournalEntry[]           @relation("JournalEntryVoidedBy")
+  accountingPeriodsLocked   AccountingPeriod[]       @relation("AccountingPeriodLocker")
 }
 
 // ─────────────────────────────────────────────
@@ -1371,37 +1374,142 @@ model ServicePayment {
 // FINANCE
 // ─────────────────────────────────────────────
 
+enum AgencyAccountBucket {
+  CASH_AND_BANK
+  ACCOUNTS_RECEIVABLE
+  ACCOUNTS_PAYABLE
+  REVENUE_PROJECT
+  REVENUE_RETAINER
+  PASS_THROUGH_BILLING
+  DEFERRED_REVENUE
+  UNBILLED_REVENUE
+  COGS_DIRECT_LABOR
+  COGS_CONTRACTOR
+  COGS_PASS_THROUGH
+  OPEX_BENCH_LABOR
+  OPEX_OVERHEAD
+  FX_GAIN_LOSS
+  BAD_DEBT_EXPENSE
+  BAD_DEBT_ALLOWANCE
+}
+
+enum JournalEntryStatus {
+  POSTED
+  VOID
+}
+
+enum JournalSourceType {
+  INVOICE
+  PAYMENT
+  EXPENSE
+  PAYROLL
+  REV_REC
+  FX_SETTLEMENT
+  BAD_DEBT
+  MANUAL
+  MIGRATION_BACKFILL
+}
+
+enum RevenueRecognitionMethod {
+  MILESTONE
+  STRAIGHT_LINE_MONTHLY
+  IMMEDIATE
+}
+
+enum RevenueScheduleStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum RevenueLineStatus {
+  SCHEDULED
+  RECOGNIZED
+  CANCELLED
+}
+
 model ChartOfAccount {
-  id        String           @id @default(cuid())
-  code      String           @unique
-  name      String
-  type      AccountType
-  parentId  String?
-  parent    ChartOfAccount?  @relation("AccountHierarchy", fields: [parentId], references: [id])
-  children  ChartOfAccount[] @relation("AccountHierarchy")
-  isActive  Boolean          @default(true)
-  createdAt DateTime         @default(now())
+  id              String               @id @default(cuid())
+  code            String               @unique
+  name            String
+  type            AccountType
+  agencyBucket    AgencyAccountBucket?
+  isSystemAccount Boolean              @default(false)
+  parentId        String?
+  parent          ChartOfAccount?      @relation("AccountHierarchy", fields: [parentId], references: [id])
+  children        ChartOfAccount[]     @relation("AccountHierarchy")
+  isActive        Boolean              @default(true)
+  createdAt       DateTime             @default(now())
 
   ledgerEntries AccountLedgerEntry[]
   expenses      Expense[]
+
+  @@index([agencyBucket])
+}
+
+model JournalEntry {
+  id              String             @id @default(cuid())
+  entryNumber     String             @unique
+  entryDate       DateTime           @default(now())
+  description     String
+  sourceType      JournalSourceType  @default(MANUAL)
+  sourceId        String?
+  status          JournalEntryStatus @default(POSTED)
+  reversesEntryId String?
+  reversesEntry   JournalEntry?      @relation("JournalReversal", fields: [reversesEntryId], references: [id], onDelete: SetNull)
+  reversedBy      JournalEntry[]     @relation("JournalReversal")
+  createdById     String?
+  createdBy       User?              @relation("JournalEntryCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  voidedAt        DateTime?
+  voidedById      String?
+  voidedBy        User?              @relation("JournalEntryVoidedBy", fields: [voidedById], references: [id], onDelete: SetNull)
+  voidReason      String?
+  createdAt       DateTime           @default(now())
+
+  lines            AccountLedgerEntry[]
+  recognitionLines RevenueRecognitionLine[]
+
+  @@index([status, entryDate])
+  @@index([sourceType, sourceId])
+}
+
+model AccountingPeriod {
+  id         String    @id @default(cuid())
+  year       Int
+  month      Int
+  isLocked   Boolean   @default(false)
+  lockedAt   DateTime?
+  lockedById String?
+  lockedBy   User?     @relation("AccountingPeriodLocker", fields: [lockedById], references: [id], onDelete: SetNull)
+  notes      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([year, month])
+  @@index([isLocked])
 }
 
 model AccountLedgerEntry {
-  id            String          @id @default(cuid())
-  accountId     String
-  account       ChartOfAccount  @relation(fields: [accountId], references: [id], onDelete: Restrict)
-  outletId      String?
-  outlet        Outlet?         @relation(fields: [outletId], references: [id], onDelete: SetNull)
-  type          TransactionType
-  amount        Decimal         @db.Decimal(12, 2)
-  description   String
-  saleId        String?
-  sale          Sale?           @relation(fields: [saleId], references: [id])
-  referenceId   String?
-  referenceType String?
-  createdAt     DateTime        @default(now())
+  id             String          @id @default(cuid())
+  accountId      String
+  account        ChartOfAccount  @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  journalEntryId String?
+  journalEntry   JournalEntry?   @relation(fields: [journalEntryId], references: [id], onDelete: SetNull)
+  outletId       String?
+  outlet         Outlet?         @relation(fields: [outletId], references: [id], onDelete: SetNull)
+  type           TransactionType
+  amount         Decimal         @db.Decimal(12, 2)
+  description    String
+  saleId         String?
+  sale           Sale?           @relation(fields: [saleId], references: [id])
+  referenceId    String?
+  referenceType  String?
+  entryDate      DateTime        @default(now())
+  createdAt      DateTime        @default(now())
 
   @@index([saleId])
+  @@index([journalEntryId])
+  @@index([entryDate])
   @@index([accountId, type])
   @@index([accountId, createdAt])
   @@index([outletId, accountId, createdAt])
@@ -1410,31 +1518,40 @@ model AccountLedgerEntry {
 }
 
 model Expense {
-  id            String         @id @default(cuid())
-  description   String
-  accountId     String
-  account       ChartOfAccount @relation(fields: [accountId], references: [id])
-  amount        Decimal        @db.Decimal(12, 2)
-  status        ExpenseStatus  @default(PENDING)
-  outletId      String
-  outlet        Outlet         @relation(fields: [outletId], references: [id])
-  createdById   String
-  createdBy     User           @relation("ExpenseCreatedBy", fields: [createdById], references: [id])
-  approvedById  String?
-  approvedBy    User?          @relation("ExpenseApprovedBy", fields: [approvedById], references: [id])
-  receiptUrl    String?
-  expenseDate   DateTime       @default(now())
-  method        PaymentMethod?
-  bankAccountId String?
-  bankAccount   BankAccount?   @relation(fields: [bankAccountId], references: [id])
-  projectId     String?
-  project       AgencyProject? @relation(fields: [projectId], references: [id])
-  categoryTag   String?
-  vendorName    String?
-  invoiceNumber String?
-  createdAt     DateTime       @default(now())
+  id              String         @id @default(cuid())
+  description     String
+  accountId       String
+  account         ChartOfAccount @relation(fields: [accountId], references: [id])
+  amount          Decimal        @db.Decimal(12, 2)
+  currency        String         @default("BDT")
+  exchangeRate    Decimal        @default(1.0) @db.Decimal(10, 4)
+  baseAmount      Decimal?       @db.Decimal(14, 2)
+  status          ExpenseStatus  @default(PENDING)
+  outletId        String
+  outlet          Outlet         @relation(fields: [outletId], references: [id])
+  createdById     String
+  createdBy       User           @relation("ExpenseCreatedBy", fields: [createdById], references: [id])
+  approvedById    String?
+  approvedBy      User?          @relation("ExpenseApprovedBy", fields: [approvedById], references: [id])
+  receiptUrl      String?
+  expenseDate     DateTime       @default(now())
+  paidDate        DateTime?
+  method          PaymentMethod?
+  bankAccountId   String?
+  bankAccount     BankAccount?   @relation(fields: [bankAccountId], references: [id])
+  projectId       String?
+  project         AgencyProject? @relation(fields: [projectId], references: [id])
+  categoryTag     String?
+  vendorName      String?
+  invoiceNumber   String?
+  isPassThrough   Boolean        @default(false)
+  isAddBack       Boolean        @default(false)
+  addBackCategory String?
+  addBackNote     String?
+  createdAt       DateTime       @default(now())
 
   @@index([outletId, status, expenseDate])
+  @@index([isPassThrough, isAddBack])
 }
 
 model CashDrawer {
@@ -1600,6 +1717,7 @@ model Department {
 
   designations Designation[]
   employees    Employee[]
+  projects     AgencyProject[]
 }
 
 model Designation {
@@ -1613,26 +1731,30 @@ model Designation {
 }
 
 model Employee {
-  id              String         @id @default(cuid())
-  employeeCode    String         @unique
-  name            String
-  email           String?        @unique
-  phone           String?
-  nid             String?        @unique
-  address         String?
-  departmentId    String
-  department      Department     @relation(fields: [departmentId], references: [id])
-  designationId   String
-  designation     Designation    @relation(fields: [designationId], references: [id])
-  employmentType  EmploymentType @default(PERMANENT)
-  joinDate        DateTime
-  terminationDate DateTime?
-  basicSalary     Decimal        @db.Decimal(12, 2)
-  outletId        String
-  outlet          Outlet         @relation(fields: [outletId], references: [id])
-  isActive        Boolean        @default(true)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id                  String         @id @default(cuid())
+  employeeCode        String         @unique
+  name                String
+  email               String?        @unique
+  phone               String?
+  nid                 String?        @unique
+  address             String?
+  departmentId        String
+  department          Department     @relation(fields: [departmentId], references: [id])
+  designationId       String
+  designation         Designation    @relation(fields: [designationId], references: [id])
+  employmentType      EmploymentType @default(PERMANENT)
+  joinDate            DateTime
+  terminationDate     DateTime?
+  basicSalary         Decimal        @db.Decimal(12, 2)
+  weeklyCapacityHours Decimal        @default(40) @db.Decimal(5, 2)
+  overheadMultiplier  Decimal        @default(1.15) @db.Decimal(5, 3)
+  loadedHourlyCost    Decimal?       @db.Decimal(10, 2)
+  isBillableRole      Boolean        @default(true)
+  outletId            String
+  outlet              Outlet         @relation(fields: [outletId], references: [id])
+  isActive            Boolean        @default(true)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
 
   salaryComponents EmployeeSalaryComponent[]
   attendances      Attendance[]
@@ -2133,25 +2255,30 @@ model ClientCredential {
 }
 
 model AgencyProject {
-  id                 String         @id @default(cuid())
-  projectCode        String         @unique // e.g. "PRJ-001"
-  clientId           String
-  client             AgencyClient   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  name               String
-  serviceCategory    String         // e.g. "Software Development", "Performance Marketing", "UI/UX Design", "SEO"
-  billingType        String         @default("FIXED_PRICE") // "FIXED_PRICE", "MONTHLY_RETAINER", "TIME_AND_MATERIALS"
-  contractValue      Decimal        @db.Decimal(14, 2)
-  startDate          DateTime       @default(now())
-  targetEndDate      DateTime?
-  status             String         @default("IN_PROGRESS") // "PLANNING", "IN_PROGRESS", "REVIEW", "COMPLETED", "ON_HOLD"
-  description        String?
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
+  id              String       @id @default(cuid())
+  projectCode     String       @unique // e.g. "PRJ-001"
+  clientId        String
+  client          AgencyClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  departmentId    String?
+  department      Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  name            String
+  serviceCategory String       // e.g. "Software Development", "Performance Marketing", "UI/UX Design", "SEO"
+  billingType     String       @default("FIXED_PRICE") // "FIXED_PRICE", "MONTHLY_RETAINER", "TIME_AND_MATERIALS"
+  contractValue   Decimal      @db.Decimal(14, 2)
+  startDate       DateTime     @default(now())
+  targetEndDate   DateTime?
+  status          String       @default("IN_PROGRESS") // "PLANNING", "IN_PROGRESS", "REVIEW", "COMPLETED", "ON_HOLD"
+  description     String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
-  invoices           AgencyInvoice[]
-  expenses           Expense[]
-  milestones         ProjectMilestone[]
-  tasks              ProjectTask[]
+  invoices         AgencyInvoice[]
+  expenses         Expense[]
+  milestones       ProjectMilestone[]
+  tasks            ProjectTask[]
+  revenueSchedules RevenueSchedule[]
+
+  @@index([departmentId])
 }
 
 enum TaskStatus {
@@ -2184,7 +2311,9 @@ model ProjectMilestone {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
-  tasks          ProjectTask[]
+  tasks            ProjectTask[]
+  invoiceItems     AgencyInvoiceItem[]
+  recognitionLines RevenueRecognitionLine[]
 
   @@index([projectId])
 }
@@ -2273,8 +2402,10 @@ model ClientRetainer {
   isActive           Boolean        @default(true)
   currency           String         @default("BDT")
   notes              String?
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  revenueSchedules   RevenueSchedule[]
 }
 
 model AgencyInvoice {
@@ -2303,34 +2434,87 @@ model AgencyInvoice {
 
   items              AgencyInvoiceItem[]
   payments           AgencyPayment[]
+  revenueSchedules   RevenueSchedule[]
 }
 
 model AgencyInvoiceItem {
-  id                 String         @id @default(cuid())
-  invoiceId          String
-  invoice            AgencyInvoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  description        String
-  serviceCategory    String?
-  quantity           Decimal        @default(1) @db.Decimal(10, 2)
-  unitPrice          Decimal        @db.Decimal(14, 2)
-  totalPrice         Decimal        @db.Decimal(14, 2)
+  id              String            @id @default(cuid())
+  invoiceId       String
+  invoice         AgencyInvoice     @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  milestoneId     String?
+  milestone       ProjectMilestone? @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
+  description     String
+  serviceCategory String?
+  isPassThrough   Boolean           @default(false)
+  quantity        Decimal           @default(1) @db.Decimal(10, 2)
+  unitPrice       Decimal           @db.Decimal(14, 2)
+  totalPrice      Decimal           @db.Decimal(14, 2)
+
+  @@index([milestoneId])
 }
 
 model AgencyPayment {
-  id                 String         @id @default(cuid())
-  paymentNumber      String         @unique
+  id                 String        @id @default(cuid())
+  paymentNumber      String        @unique
   invoiceId          String
-  invoice            AgencyInvoice  @relation(fields: [invoiceId], references: [id])
+  invoice            AgencyInvoice @relation(fields: [invoiceId], references: [id])
   clientId           String
-  client             AgencyClient   @relation(fields: [clientId], references: [id])
-  amount             Decimal        @db.Decimal(14, 2)
-  paymentDate        DateTime       @default(now())
-  paymentMethod      String         // BANK_TRANSFER, BKASH, NAGAD, STRIPE, CASH
+  client             AgencyClient  @relation(fields: [clientId], references: [id])
+  amount             Decimal       @db.Decimal(14, 2)
+  currency           String        @default("BDT")
+  settlementRate     Decimal       @default(1.0) @db.Decimal(10, 4)
+  baseAmount         Decimal?      @db.Decimal(14, 2)
+  realizedFxGainLoss Decimal       @default(0) @db.Decimal(14, 2)
+  paymentDate        DateTime      @default(now())
+  paymentMethod      String        // BANK_TRANSFER, BKASH, NAGAD, STRIPE, CASH
   bankAccountId      String?
-  bankAccount        BankAccount?   @relation(fields: [bankAccountId], references: [id])
-  reference          String?        // TrxID / Transaction Reference
+  bankAccount        BankAccount?  @relation(fields: [bankAccountId], references: [id])
+  reference          String?       // TrxID / Transaction Reference
   notes              String?
-  createdAt          DateTime       @default(now())
+  createdAt          DateTime      @default(now())
+}
+
+model RevenueSchedule {
+  id                String                   @id @default(cuid())
+  invoiceId         String
+  invoice           AgencyInvoice            @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  projectId         String?
+  project           AgencyProject?           @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  retainerId        String?
+  retainer          ClientRetainer?          @relation(fields: [retainerId], references: [id], onDelete: SetNull)
+  recognitionMethod RevenueRecognitionMethod @default(MILESTONE)
+  totalDeferred     Decimal                  @db.Decimal(14, 2)
+  totalRecognized   Decimal                  @default(0) @db.Decimal(14, 2)
+  status            RevenueScheduleStatus    @default(ACTIVE)
+  notes             String?
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+
+  lines RevenueRecognitionLine[]
+
+  @@index([invoiceId])
+  @@index([projectId, status])
+  @@index([retainerId, status])
+}
+
+model RevenueRecognitionLine {
+  id             String            @id @default(cuid())
+  scheduleId     String
+  schedule       RevenueSchedule   @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  milestoneId    String?
+  milestone      ProjectMilestone? @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
+  periodYear     Int
+  periodMonth    Int
+  amount         Decimal           @db.Decimal(14, 2)
+  status         RevenueLineStatus @default(SCHEDULED)
+  recognizedAt   DateTime?
+  journalEntryId String?
+  journalEntry   JournalEntry?     @relation(fields: [journalEntryId], references: [id], onDelete: SetNull)
+  createdAt      DateTime          @default(now())
+
+  @@index([scheduleId, status])
+  @@index([periodYear, periodMonth, status])
+  @@index([milestoneId])
 }
 
 model ClientLedger {

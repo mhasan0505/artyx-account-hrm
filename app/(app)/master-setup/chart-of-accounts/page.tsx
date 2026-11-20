@@ -1,4 +1,5 @@
 import { EditChartOfAccountDialog } from '@/components/modals/edit-chart-of-account-dialog'
+import { SyncAgencyCoaButton } from '@/components/master-setup/sync-agency-coa-button'
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -42,6 +43,7 @@ export default async function ChartOfAccountsPage() {
             Standard double-entry accounting structure configured for Artyx Digital agency ledger transactions.
           </p>
         </div>
+        <SyncAgencyCoaButton />
       </div>
 
       {/* Info Callout */}
@@ -63,6 +65,7 @@ export default async function ChartOfAccountsPage() {
               <TableHead className="w-24 font-semibold text-foreground">Code</TableHead>
               <TableHead className="font-semibold text-foreground">Account Name</TableHead>
               <TableHead className="font-semibold text-foreground">Type</TableHead>
+              <TableHead className="font-semibold text-foreground">Agency Bucket</TableHead>
               <TableHead className="font-semibold text-foreground">Status</TableHead>
               <TableHead className="w-24 text-right font-semibold text-foreground">Actions</TableHead>
             </TableRow>
@@ -71,7 +74,7 @@ export default async function ChartOfAccountsPage() {
             {accounts.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={5}
+                  colSpan={6}
                   className="py-12 text-center text-sm text-muted-foreground"
                 >
                   No chart of accounts records found in system.
@@ -102,6 +105,15 @@ export default async function ChartOfAccountsPage() {
                     >
                       {acc.type}
                     </span>
+                  </TableCell>
+                  <TableCell>
+                    {acc.agencyBucket ? (
+                      <span className="inline-flex rounded-md border border-foreground/[0.1] bg-muted/60 px-2 py-0.5 font-mono text-[10px] font-medium text-foreground">
+                        {acc.agencyBucket.replace(/_/g, ' ')}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground/50">—</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <span

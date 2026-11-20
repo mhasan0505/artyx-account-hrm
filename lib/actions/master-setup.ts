@@ -149,6 +149,7 @@ export async function getChartOfAccountsList() {
       code: true,
       name: true,
       type: true,
+      agencyBucket: true,
       isActive: true,
     },
     orderBy: { code: 'asc' },

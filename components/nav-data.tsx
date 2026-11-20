@@ -151,6 +151,11 @@ export const navData: NavSection[] = [
         url: '/finances/project-profitability',
       },
       {
+        title: 'Revenue Recognition',
+        icon: <CalendarCheck className="size-4 shrink-0 text-emerald-400" />,
+        url: '/finances/revenue-recognition',
+      },
+      {
         title: 'Bank & MFS Accounts',
         icon: <Banknote className="size-4 shrink-0 text-indigo-400" />,
         url: '/finances/banks',

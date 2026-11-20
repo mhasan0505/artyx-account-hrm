@@ -857,7 +857,7 @@ export function NotificationCenterProvider() {
       className={cn(
         'pointer-events-none fixed z-50 flex flex-col items-end gap-2.5 print:hidden transition-all duration-300',
         isChatboxOpen
-          ? 'bottom-5 right-5 md:right-[438px]'
+          ? 'bottom-5 right-5 md:right-109.5'
           : 'bottom-20 right-5'
       )}
     >
