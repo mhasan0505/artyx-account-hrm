@@ -2,6 +2,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/db'
 import { AgencyDashboard } from '@/components/agency-dashboard'
 import { getAgencyProfitAndLoss } from '@/lib/actions/agency-profit'
+import { getGuardrailsDashboardData } from '@/lib/actions/agency-cashflow'
 import { redirect } from 'next/navigation'
 
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -303,8 +304,24 @@ export default async function DashboardPage() {
       ? Math.round((totalCollected / totalInvoiced) * 100)
       : 0
 
+  const guardrailSummary = await getGuardrailsDashboardData()
+    .then(g => ({
+      healthScore: g.evaluation.healthScore,
+      criticalCount: g.evaluation.criticalCount,
+      warningCount: g.evaluation.warningCount,
+      topBreaches: g.evaluation.breaches.slice(0, 2).map(b => ({
+        id: b.id,
+        label: b.label,
+        severity: b.severity,
+        headline: b.headline,
+        href: b.href,
+      })),
+    }))
+    .catch(() => null)
+
   const stats = {
     userName: session.user.name ?? undefined,
+    guardrailSummary,
     totalClients: clientsCount,
     monthlyMRR: Number(retainersAgg._sum.monthlyFee || 0),
     activeRetainers: retainersAgg._count.id,

@@ -365,6 +365,8 @@ model User {
   journalEntriesCreated     JournalEntry[]           @relation("JournalEntryCreator")
   journalEntriesVoided      JournalEntry[]           @relation("JournalEntryVoidedBy")
   accountingPeriodsLocked   AccountingPeriod[]       @relation("AccountingPeriodLocker")
+  cashFlowScenariosCreated  CashFlowScenario[]       @relation("CashFlowScenarioCreator")
+  guardrailConfigsUpdated   GuardrailConfig[]        @relation("GuardrailConfigUpdater")
 }
 
 // ─────────────────────────────────────────────
@@ -2515,6 +2517,77 @@ model RevenueRecognitionLine {
   @@index([scheduleId, status])
   @@index([periodYear, periodMonth, status])
   @@index([milestoneId])
+}
+
+// ─────────────────────────────────────────────
+// PHASE 2 — CASH FLOW, RUNWAY & GUARDRAILS
+// ─────────────────────────────────────────────
+
+enum CommitmentFrequency {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+}
+
+enum CommitmentCategory {
+  RENT
+  SAAS
+  TAX_VAT
+  OWNER_DRAWING
+  DEBT_SERVICE
+  MARKETING
+  OTHER
+}
+
+model RecurringCommitment {
+  id          String              @id @default(cuid())
+  name        String
+  category    CommitmentCategory  @default(OTHER)
+  amount      Decimal             @db.Decimal(14, 2)
+  frequency   CommitmentFrequency @default(MONTHLY)
+  dueDay      Int                 @default(1) // Day of month (1-28) or weekday (1-7)
+  nextDueDate DateTime?
+  isActive    Boolean             @default(true)
+  notes       String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([isActive, frequency])
+}
+
+model GuardrailConfig {
+  id                        String   @id @default(cuid())
+  key                       String   @unique @default("DEFAULT")
+  minBillableUtilizationPct Decimal  @default(70) @db.Decimal(5, 2)
+  maxClientConcentrationPct Decimal  @default(20) @db.Decimal(5, 2)
+  minProjectGrossMarginPct  Decimal  @default(45) @db.Decimal(5, 2)
+  minRunwayMonths           Decimal  @default(3) @db.Decimal(5, 2)
+  badDebtOverdueDays        Int      @default(90)
+  updatedById               String?
+  updatedBy                 User?    @relation("GuardrailConfigUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedAt                 DateTime @updatedAt
+}
+
+model CashFlowScenario {
+  id                    String   @id @default(cuid())
+  name                  String
+  description           String?
+  // Queryable structured summary columns for SQL filtering/sorting/comparison
+  hiredCount            Int      @default(0)
+  hiredMonthlySalary    Decimal  @default(0) @db.Decimal(14, 2)
+  retainerMrrDelta      Decimal  @default(0) @db.Decimal(14, 2)
+  monthlyAdSpendDelta   Decimal  @default(0) @db.Decimal(14, 2)
+  arDelayWeeks          Int      @default(0)
+  projectedLowestCash   Decimal  @default(0) @db.Decimal(14, 2)
+  projectedEndingCash   Decimal  @default(0) @db.Decimal(14, 2)
+  // Full Zod-validated assumption payload
+  assumptionsJson       Json
+  createdById           String?
+  createdBy             User?    @relation("CashFlowScenarioCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([createdAt])
 }
 
 model ClientLedger {

@@ -156,6 +156,16 @@ export const navData: NavSection[] = [
         url: '/finances/revenue-recognition',
       },
       {
+        title: '13-Week Cash & Runway',
+        icon: <TrendingUp className="size-4 shrink-0 text-lime-400" />,
+        url: '/finances/cashflow-runway',
+      },
+      {
+        title: 'Guardrail Alerts',
+        icon: <ShieldAlert className="size-4 shrink-0 text-amber-400" />,
+        url: '/finances/guardrails',
+      },
+      {
         title: 'Bank & MFS Accounts',
         icon: <Banknote className="size-4 shrink-0 text-indigo-400" />,
         url: '/finances/banks',

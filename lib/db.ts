@@ -5,8 +5,11 @@ import { Pool } from 'pg'
 export const DATABASE_UNAVAILABLE_MESSAGE =
   'Database is currently unavailable. Please try again shortly.'
 
+const PRISMA_CLIENT_VERSION = '2026-phase2-accounting-v1'
+
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
+  prismaVersion: string | undefined
 }
 
 function createPrismaClient() {
@@ -176,13 +179,21 @@ export async function withDatabaseReadFallback<T>(
 // Also ensure any newly added models (e.g. projectTask) force a refresh if missing from cached global.
 if (
   !globalForPrisma.prisma ||
+  globalForPrisma.prismaVersion !== PRISMA_CLIENT_VERSION ||
   !('projectTask' in (globalForPrisma.prisma as unknown as Record<string, unknown>)) ||
   !('teamChatMessage' in (globalForPrisma.prisma as unknown as Record<string, unknown>)) ||
   !('ceoVaultItem' in (globalForPrisma.prisma as unknown as Record<string, unknown>)) ||
   !('passwordResetToken' in (globalForPrisma.prisma as unknown as Record<string, unknown>)) ||
-  !('executiveTask' in (globalForPrisma.prisma as unknown as Record<string, unknown>))
+  !('executiveTask' in (globalForPrisma.prisma as unknown as Record<string, unknown>)) ||
+  !('journalEntry' in (globalForPrisma.prisma as unknown as Record<string, unknown>)) ||
+  !('revenueSchedule' in (globalForPrisma.prisma as unknown as Record<string, unknown>)) ||
+  !('revenueRecognitionLine' in (globalForPrisma.prisma as unknown as Record<string, unknown>)) ||
+  !('recurringCommitment' in (globalForPrisma.prisma as unknown as Record<string, unknown>)) ||
+  !('guardrailConfig' in (globalForPrisma.prisma as unknown as Record<string, unknown>)) ||
+  !('cashFlowScenario' in (globalForPrisma.prisma as unknown as Record<string, unknown>))
 ) {
   globalForPrisma.prisma = createPrismaClient()
+  globalForPrisma.prismaVersion = PRISMA_CLIENT_VERSION
 }
 
 export const prisma = globalForPrisma.prisma

@@ -4,6 +4,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { motion, useReducedMotion } from 'framer-motion'
 import {
+  AlertTriangle,
   ArrowRight,
   ArrowUpRight,
   Plus,
@@ -25,6 +26,18 @@ import {
 
 export type AgencyDashboardStats = {
   userName?: string
+  guardrailSummary?: {
+    healthScore: number
+    criticalCount: number
+    warningCount: number
+    topBreaches: Array<{
+      id: string
+      label: string
+      severity: 'HEALTHY' | 'WARNING' | 'CRITICAL'
+      headline: string
+      href: string
+    }>
+  } | null
   totalClients: number
   monthlyMRR: number
   activeRetainers: number
@@ -291,6 +304,53 @@ export function AgencyDashboard({ stats }: { stats: AgencyDashboardStats }) {
           </Link>
         </div>
       </motion.header>
+
+      {/* QUIET EXECUTIVE GUARDRAIL STRIP (ONLY WHEN THRESHOLD BREACHED) */}
+      {stats.guardrailSummary && stats.guardrailSummary.topBreaches.length > 0 ? (
+        <motion.div
+          variants={sectionVariants}
+          className={cn(
+            'flex flex-col gap-2.5 rounded-xl border px-4 py-2.5 text-xs sm:flex-row sm:items-center sm:justify-between',
+            stats.guardrailSummary.criticalCount > 0
+              ? 'border-rose-500/30 bg-rose-500/[0.06]'
+              : 'border-amber-500/30 bg-amber-500/[0.06]'
+          )}
+        >
+          <div className="flex flex-wrap items-center gap-2.5 min-w-0">
+            <AlertTriangle
+              className={cn(
+                'size-3.5 shrink-0',
+                stats.guardrailSummary.criticalCount > 0
+                  ? 'text-rose-500'
+                  : 'text-amber-500'
+              )}
+            />
+            <span className="font-mono text-[11px] font-semibold text-foreground">
+              Guardrails ({stats.guardrailSummary.criticalCount + stats.guardrailSummary.warningCount})
+            </span>
+            <span className="hidden text-foreground/25 sm:inline">·</span>
+            <span className="truncate text-muted-foreground">
+              {stats.guardrailSummary.topBreaches[0].headline}
+            </span>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-3 text-[11px] font-medium">
+            <Link
+              href="/finances/cashflow-runway"
+              className="text-muted-foreground transition-colors hover:text-foreground"
+            >
+              13-Week Runway
+            </Link>
+            <Link
+              href="/finances/guardrails"
+              className="inline-flex items-center gap-1 text-primary hover:underline"
+            >
+              <span>Inspect Alerts</span>
+              <ArrowUpRight className="size-3" />
+            </Link>
+          </div>
+        </motion.div>
+      ) : null}
 
       {/* 2. SIGNATURE ARCHITECTURAL CENTERPIECE: LEDGER SUMMARY + FINANCIAL HORIZON */}
       <motion.section
