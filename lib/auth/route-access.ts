@@ -109,6 +109,18 @@ export const ROUTE_ACCESS: Array<{ prefix: string; roles: UserRoleString[] }> = 
     roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'ACCOUNTANT'],
   },
   {
+    prefix: '/finances/goals',
+    roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER'],
+  },
+  {
+    prefix: '/finances/growth',
+    roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER'],
+  },
+  {
+    prefix: '/finances/valuation',
+    roles: ['SUPER_ADMIN', 'ADMIN'],
+  },
+  {
     prefix: '/finances',
     roles: ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'ACCOUNTANT'],
   },

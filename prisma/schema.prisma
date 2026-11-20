@@ -367,6 +367,9 @@ model User {
   accountingPeriodsLocked   AccountingPeriod[]       @relation("AccountingPeriodLocker")
   cashFlowScenariosCreated  CashFlowScenario[]       @relation("CashFlowScenarioCreator")
   guardrailConfigsUpdated   GuardrailConfig[]        @relation("GuardrailConfigUpdater")
+  agencyGoalsUpdated        AgencyAnnualGoal[]       @relation("AgencyGoalUpdater")
+  opportunitiesCreated      SalesOpportunity[]       @relation("OpportunityCreator")
+  valuationProfilesUpdated  ValuationProfile[]       @relation("ValuationProfileUpdater")
 }
 
 // ─────────────────────────────────────────────
@@ -1546,11 +1549,12 @@ model Expense {
   categoryTag     String?
   vendorName      String?
   invoiceNumber   String?
-  isPassThrough   Boolean        @default(false)
-  isAddBack       Boolean        @default(false)
-  addBackCategory String?
-  addBackNote     String?
-  createdAt       DateTime       @default(now())
+  isPassThrough    Boolean        @default(false)
+  isAddBack        Boolean        @default(false)
+  addBackCategory  String?
+  addBackNote      String?
+  marketingChannel String?
+  createdAt        DateTime       @default(now())
 
   @@index([outletId, status, expenseDate])
   @@index([isPassThrough, isAddBack])
@@ -1720,6 +1724,7 @@ model Department {
   designations Designation[]
   employees    Employee[]
   projects     AgencyProject[]
+  podTargets   PodTarget[]
 }
 
 model Designation {
@@ -2225,6 +2230,7 @@ model AgencyClient {
   clientType         ClientType         @default(PROJECT_BASED)
   status             ClientStatus       @default(ACTIVE)
   outstandingBalance Decimal            @default(0) @db.Decimal(14, 2)
+  acquisitionChannel String?
   notes              String?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
@@ -2232,6 +2238,8 @@ model AgencyClient {
   credentials        ClientCredential[]
   projects           AgencyProject[]
   retainers          ClientRetainer[]
+  retainerEvents     RetainerEvent[]
+  opportunities      SalesOpportunity[]
   invoices           AgencyInvoice[]
   payments           AgencyPayment[]
   ledger             ClientLedger[]
@@ -2408,6 +2416,7 @@ model ClientRetainer {
   updatedAt          DateTime          @updatedAt
 
   revenueSchedules   RevenueSchedule[]
+  events             RetainerEvent[]
 }
 
 model AgencyInvoice {
@@ -2588,6 +2597,121 @@ model CashFlowScenario {
   updatedAt             DateTime @updatedAt
 
   @@index([createdAt])
+}
+
+// ─────────────────────────────────────────────
+// PHASE 3 — GOALS, GROWTH ANALYTICS & VALUATION
+// ─────────────────────────────────────────────
+
+enum RetainerEventType {
+  NEW
+  EXPANSION
+  CONTRACTION
+  CHURN
+  REACTIVATION
+}
+
+enum OpportunityDealType {
+  PROJECT
+  RETAINER
+  HYBRID
+}
+
+enum OpportunityStage {
+  LEAD
+  PROPOSAL
+  NEGOTIATION
+  WON
+  LOST
+}
+
+model AgencyAnnualGoal {
+  id                   String      @id @default(cuid())
+  fiscalYear           Int         @unique
+  targetArr            Decimal     @db.Decimal(14, 2)
+  targetProjectRevenue Decimal     @db.Decimal(14, 2)
+  targetEbitdaPct      Decimal     @default(25) @db.Decimal(5, 2)
+  avgProjectSize       Decimal     @default(300000) @db.Decimal(14, 2)
+  avgRetainerMrr       Decimal     @default(120000) @db.Decimal(14, 2)
+  targetUtilizationPct Decimal     @default(75) @db.Decimal(5, 2)
+  avgBillableRate      Decimal     @default(3500) @db.Decimal(10, 2)
+  notes                String?
+  updatedById          String?
+  updatedBy            User?       @relation("AgencyGoalUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  podTargets PodTarget[]
+}
+
+model PodTarget {
+  id                   String           @id @default(cuid())
+  goalId               String
+  goal                 AgencyAnnualGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  departmentId         String?
+  department           Department?      @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  serviceLine          String
+  targetRevenue        Decimal          @db.Decimal(14, 2)
+  targetGrossMarginPct Decimal          @default(55) @db.Decimal(5, 2)
+  headcountBudget      Int              @default(3)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  @@index([goalId])
+  @@index([departmentId])
+}
+
+model RetainerEvent {
+  id            String            @id @default(cuid())
+  retainerId    String
+  retainer      ClientRetainer    @relation(fields: [retainerId], references: [id], onDelete: Cascade)
+  clientId      String
+  client        AgencyClient      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  eventType     RetainerEventType
+  mrrDelta      Decimal           @db.Decimal(14, 2)
+  effectiveDate DateTime          @default(now())
+  notes         String?
+  createdAt     DateTime          @default(now())
+
+  @@index([effectiveDate, eventType])
+  @@index([clientId])
+}
+
+model SalesOpportunity {
+  id                 String              @id @default(cuid())
+  title              String
+  clientId           String?
+  client             AgencyClient?       @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  prospectName       String
+  dealType           OpportunityDealType @default(PROJECT)
+  estimatedValue     Decimal             @db.Decimal(14, 2)
+  monthlyValue       Decimal             @default(0) @db.Decimal(14, 2)
+  winProbabilityPct  Int                 @default(35)
+  expectedCloseDate  DateTime
+  stage              OpportunityStage    @default(PROPOSAL)
+  acquisitionChannel String?
+  notes              String?
+  createdById        String?
+  createdBy          User?               @relation("OpportunityCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@index([stage, expectedCloseDate])
+  @@index([acquisitionChannel])
+}
+
+model ValuationProfile {
+  id                        String   @id @default(cuid())
+  key                       String   @unique @default("DEFAULT")
+  baseMultiple              Decimal  @default(4.0) @db.Decimal(5, 2)
+  recurringBonusMax         Decimal  @default(2.0) @db.Decimal(5, 2)
+  concentrationPenaltyMax   Decimal  @default(1.25) @db.Decimal(5, 2)
+  growthBonusMax            Decimal  @default(1.0) @db.Decimal(5, 2)
+  founderDependencyDiscount Decimal  @default(0.5) @db.Decimal(5, 2)
+  notes                     String?
+  updatedById               String?
+  updatedBy                 User?    @relation("ValuationProfileUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedAt                 DateTime @updatedAt
 }
 
 model ClientLedger {

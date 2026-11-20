@@ -5,7 +5,7 @@ import { Pool } from 'pg'
 export const DATABASE_UNAVAILABLE_MESSAGE =
   'Database is currently unavailable. Please try again shortly.'
 
-const PRISMA_CLIENT_VERSION = '2026-phase2-accounting-v1'
+const PRISMA_CLIENT_VERSION = '2026-phase3-strategy-v1'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
@@ -190,7 +190,12 @@ if (
   !('revenueRecognitionLine' in (globalForPrisma.prisma as unknown as Record<string, unknown>)) ||
   !('recurringCommitment' in (globalForPrisma.prisma as unknown as Record<string, unknown>)) ||
   !('guardrailConfig' in (globalForPrisma.prisma as unknown as Record<string, unknown>)) ||
-  !('cashFlowScenario' in (globalForPrisma.prisma as unknown as Record<string, unknown>))
+  !('cashFlowScenario' in (globalForPrisma.prisma as unknown as Record<string, unknown>)) ||
+  !('agencyAnnualGoal' in (globalForPrisma.prisma as unknown as Record<string, unknown>)) ||
+  !('podTarget' in (globalForPrisma.prisma as unknown as Record<string, unknown>)) ||
+  !('retainerEvent' in (globalForPrisma.prisma as unknown as Record<string, unknown>)) ||
+  !('salesOpportunity' in (globalForPrisma.prisma as unknown as Record<string, unknown>)) ||
+  !('valuationProfile' in (globalForPrisma.prisma as unknown as Record<string, unknown>))
 ) {
   globalForPrisma.prisma = createPrismaClient()
   globalForPrisma.prismaVersion = PRISMA_CLIENT_VERSION

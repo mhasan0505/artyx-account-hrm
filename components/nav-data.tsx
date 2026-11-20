@@ -166,6 +166,21 @@ export const navData: NavSection[] = [
         url: '/finances/guardrails',
       },
       {
+        title: 'Goal Builder & Pods',
+        icon: <SlidersHorizontal className="size-4 shrink-0 text-sky-400" />,
+        url: '/finances/goals',
+      },
+      {
+        title: 'Pipeline & Cohorts',
+        icon: <BarChart2 className="size-4 shrink-0 text-violet-400" />,
+        url: '/finances/growth',
+      },
+      {
+        title: 'Valuation & Exit',
+        icon: <Scale className="size-4 shrink-0 text-lime-400" />,
+        url: '/finances/valuation',
+      },
+      {
         title: 'Bank & MFS Accounts',
         icon: <Banknote className="size-4 shrink-0 text-indigo-400" />,
         url: '/finances/banks',
